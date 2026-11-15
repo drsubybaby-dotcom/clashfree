@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClashFree – Smart Timetable Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
+<style>
+:root{
+  --bg:#f4f5fb; --card:#ffffff; --ink:#18202f; --muted:#667085; --soft:#98a2b3; --line:#e6e8f0;
+  --brand:#4f46e5; --brand-d:#3730a3; --brand-l:#eef0ff; --teal:#0d9488;
+  --ok:#067647; --okbg:#ecfdf3; --bad:#b42318; --badbg:#fef3f2; --warn:#93370d; --warnbg:#fffaeb;
+  --r:14px; --shadow:0 1px 2px rgba(16,24,40,.05),0 4px 16px rgba(16,24,40,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.hero{background:linear-gradient(135deg,#1e1b4b 0%,#3730a3 55%,#0f766e 120%);color:#fff;padding:28px 16px 64px}
+.hero-in{max-width:1120px;margin:0 auto}
+.badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);padding:4px 10px;border-radius:999px;font-size:12px;letter-spacing:.02em}
+.hero h1{font:800 clamp(24px,4.5vw,34px)/1.15 'Plus Jakarta Sans',Inter,sans-serif;margin:12px 0 6px;letter-spacing:-.02em}
+.hero p{margin:0;opacity:.85;max-width:640px}
+.rules-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.rules-chips span{font-size:13px;background:rgba(255,255,255,.1);padding:5px 11px;border-radius:8px}
+.wrap{max-width:1120px;margin:-40px auto 0;padding:0 14px 60px;position:relative}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card-h{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.step{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--brand-l);color:var(--brand);font-weight:700;font-size:14px;flex:none}
+.card-h h2{font:700 17px/1.2 'Plus Jakarta Sans',Inter,sans-serif;margin:0}
+.card-h p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px}
+.lbl{font-size:12.5px;font-weight:600;color:#344054;text-transform:uppercase;letter-spacing:.04em}
+.help{font-size:12.5px;color:var(--muted)}
+input[type=text],input[type=email],input[type=time],input[type=number],select{font:inherit;font-size:14px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);width:100%;outline:none;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(79,70,229,.15)}
+.drop{display:block;border:2px dashed #c7cbe0;border-radius:12px;padding:22px 16px;text-align:center;cursor:pointer;background:#fafbff;transition:all .15s}
+.drop:hover,.drop.over{border-color:var(--brand);background:var(--brand-l)}
+.drop .ic{width:42px;height:42px;margin:0 auto 8px;border-radius:12px;background:#fff;display:grid;place-items:center;box-shadow:var(--shadow);color:var(--brand)}
+.drop b{display:block;font-size:15px}
+.drop span{color:var(--muted);font-size:13px}
+input[type=file]{display:none}
+.or{display:flex;align-items:center;gap:10px;color:var(--soft);font-size:12px;margin:14px 0 10px;text-transform:uppercase;letter-spacing:.06em}
+.or:before,.or:after{content:"";flex:1;height:1px;background:var(--line)}
+textarea{width:100%;min-height:170px;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;border:1px solid var(--line);border-radius:10px;padding:10px 12px;resize:vertical;white-space:pre;tab-size:20;outline:none;background:#fcfcfd}
+.btn{font:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap}
+.btn:hover{border-color:#c4c8d6;background:#fafafa}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+.btn.primary:hover{background:var(--brand-d)}
+.btn.big{padding:13px 22px;font-size:15px;border-radius:12px;width:100%;justify-content:center}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--brand)}
+.btn.ghost:hover{background:var(--brand-l)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.between{justify-content:space-between}
+.summary{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.pill{font-size:12.5px;background:#f2f4f7;border-radius:999px;padding:4px 10px;color:#344054}
+.pill b{color:var(--ink)}
+.seg{display:inline-flex;background:#f2f4f7;border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{font:inherit;font-size:13.5px;border:0;background:transparent;padding:6px 12px;border-radius:8px;cursor:pointer;color:#475467;font-weight:500}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(16,24,40,.12)}
+.days{display:flex;flex-wrap:wrap;gap:6px}
+.day{font:inherit;font-size:13.5px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:7px 12px;cursor:default;color:#475467;font-weight:500}
+.day.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+.stepper button{border:0;background:#f9fafb;width:38px;height:38px;font-size:18px;cursor:pointer;color:#344054}
+.stepper button:hover{background:#f2f4f7}
+.stepper output{min-width:44px;text-align:center;font-weight:600}
+.toggle{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;font-weight:500;font-size:14px}
+.toggle input{display:none}
+.sw{width:38px;height:22px;border-radius:999px;background:#d0d5dd;position:relative;transition:.15s;flex:none}
+.sw:after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.toggle input:checked + .sw{background:var(--brand)}
+.toggle input:checked + .sw:after{left:19px}
+.timing{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+@media(max-width:640px){.timing{grid-template-columns:1fr 1fr}}
+.sep{height:1px;background:var(--line);margin:18px 0}
+.msg{border-radius:10px;padding:11px 14px;margin:10px 0;font-size:14px;border:1px solid transparent}
+.msg.ok{background:var(--okbg);color:var(--ok);border-color:#abefc6}
+.msg.bad{background:var(--badbg);color:var(--bad);border-color:#fecdca}
+.msg.warn{background:var(--warnbg);color:var(--warn);border-color:#fedf89}
+.msg ul{margin:6px 0 0 18px;padding:0}
+.checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:12px}
+.check{display:flex;gap:10px;align-items:flex-start;background:var(--okbg);border:1px solid #abefc6;color:var(--ok);border-radius:12px;padding:11px 13px;font-size:13.5px;font-weight:500}
+.check.no{background:var(--badbg);border-color:#fecdca;color:var(--bad)}
+.check .dot{width:22px;height:22px;border-radius:50%;background:currentColor;flex:none;display:grid;place-items:center}
+.check .dot svg{stroke:#fff}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:640px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:#f9fafb;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi b{display:block;font:800 22px/1.1 'Plus Jakarta Sans',Inter,sans-serif}
+.kpi span{font-size:12.5px;color:var(--muted)}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:18px;position:sticky;top:0;background:#fff;z-index:2}
+.toolbar select{width:auto;min-width:170px}
+.doc-title{text-align:center;margin:4px 0 18px}
+.doc-title h3{font:800 19px/1.2 'Plus Jakarta Sans',Inter,sans-serif;margin:0}
+.doc-title p{margin:3px 0 0;color:var(--muted);font-size:13px}
+.tt{margin-bottom:26px}
+.tt-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0 0 8px}
+.tt-h h4{font:700 16px/1.2 'Plus Jakarta Sans',Inter,sans-serif;margin:0}
+.tt-h span{font-size:12.5px;color:var(--muted)}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+.tt table{min-width:640px;table-layout:fixed}
+.tt thead th:first-child{width:96px}
+.tt th.brk{width:28px}
+th,td{padding:8px;text-align:center;vertical-align:middle;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+tr>*:last-child{border-right:0}
+tbody tr:last-child>*{border-bottom:0}
+thead th{background:#f9fafb;font-weight:600;font-size:12.5px;color:#344054}
+thead th small{display:block;font-weight:500;color:var(--soft);font-size:11px;margin-top:1px}
+tbody th{background:#fcfcfd;text-align:left;font-weight:600;white-space:nowrap;width:1%;padding-right:14px}
+td.cell{padding:5px}
+.slot{border-radius:9px;padding:7px 6px;border-left:3px solid;min-height:46px;display:flex;flex-direction:column;justify-content:center}
+.slot .s{font-weight:600;line-height:1.25;font-size:12.5px}
+.slot .t{font-size:11.5px;opacity:.75;margin-top:2px}
+td.free{color:#c0c5d0;font-size:12px}
+th.brk,td.brk{background:repeating-linear-gradient(45deg,#f9fafb,#f9fafb 6px,#f2f4f7 6px,#f2f4f7 12px);width:28px;padding:0;color:var(--soft);font-size:10px;font-weight:600;letter-spacing:.1em}
+td.brk span,th.brk span{writing-mode:vertical-rl;transform:rotate(180deg)}
+.load td,.load th{text-align:center}
+.load tbody th{text-align:left}
+.bar-in{height:6px;background:#eef0f4;border-radius:3px;overflow:hidden;min-width:60px}
+.bar-in i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--teal));border-radius:3px}
+.progress{height:4px;background:#eef0f4;border-radius:2px;overflow:hidden;margin-top:10px}
+.progress i{display:block;height:100%;width:0;background:var(--brand);transition:width .1s}
+.hide{display:none!important}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(10px);background:#101828;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:all .2s;pointer-events:none;z-index:9}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.status{font-size:13px;color:var(--muted);text-align:center;margin-top:8px;min-height:20px}
+.who{font:inherit;font-size:12.5px;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:5px 12px;cursor:pointer;max-width:60vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.who:hover{background:rgba(255,255,255,.2)}
+.modal{position:fixed;inset:0;background:rgba(16,24,40,.55);backdrop-filter:blur(4px);display:grid;place-items:center;padding:16px;z-index:20;overflow:auto}
+.mbox{background:#fff;border-radius:18px;padding:26px 22px 20px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:13px;box-shadow:0 20px 50px rgba(16,24,40,.3)}
+.mbox h2{font:800 22px/1.2 'Plus Jakarta Sans',Inter,sans-serif;margin:0;text-align:center}
+.msub{margin:-6px 0 4px;color:var(--muted);text-align:center;font-size:14px}
+.mlogo{width:52px;height:52px;margin:0 auto;border-radius:14px;background:linear-gradient(135deg,#3730a3,#0f766e);color:#fff;display:grid;place-items:center;font:800 18px 'Plus Jakarta Sans',Inter,sans-serif}
+.mnote{font-size:12px;color:var(--muted);margin:0;text-align:center}
+.credit{text-align:center;font-size:11.5px;color:var(--muted);margin:14px 0 0;letter-spacing:.01em}.credit b{font-weight:600;color:#475467}
+.hero .by{font-size:12px;opacity:.7;margin-top:14px}
+.foot{text-align:center;color:var(--soft);font-size:12px;margin-top:10px}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-in">
+    <div class="row between"><span class="badge">● Smart Timetable Generator</span><button class="who hide" id="who" title="Change your details"></button></div>
+    <h1>ClashFree</h1>
+    <p>Clash-free weekly timetables for any school, college or department. Upload your subjects and teachers from Excel and download a ready Excel timetable for every class and every teacher.</p>
+    <div class="rules-chips"><span>✓ No teacher in two classes at once</span><span id="chipConsec">✓ No teacher teaches more than 2 hours continuously</span><span>✓ Subjects spread across the week</span></div>
+    <p class="by">By Dr. Suby Baby, Nirmala College Muvattupuzha (Autonomous)</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- STEP 1 -->
+  <section class="card">
+    <div class="card-h"><div class="step">1</div><div><h2>Add classes, subjects &amp; teachers</h2><p>One row per subject: <b>Class · Subject · Teacher · Hours per week</b></p></div></div>
+    <label class="drop" id="drop" for="file">
+      <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+      <b id="dropT">Upload Excel file</b>
+      <span id="dropS">Tap to choose, or drag a .xlsx / .xls / .csv file here</span>
+    </label>
+    <input type="file" id="file" accept=".xlsx,.xls,.csv,.ods">
+    <div class="or">or paste from Excel / edit below</div>
+    <textarea id="data" spellcheck="false" placeholder="Class	Subject	Teacher	Hours&#10;Class 8A	Mathematics	Ravi	6&#10;Class 8A	English	Meera	5&#10;BSc Physics I	Mechanics	Dr. Anil / Dr. Rose	4"></textarea>
+    <div class="row between" style="margin-top:10px">
+      <div class="row">
+        <button class="btn" id="sSchool">School example</button>
+        <button class="btn" id="sCollege">College example</button>
+      </div>
+      <div class="row">
+        <button class="btn ghost" id="tpl">Copy template</button>
+        <button class="btn ghost" id="clear">Clear</button>
+      </div>
+    </div>
+    <div class="summary" id="summary"></div>
+    <div id="inmsg"></div>
+    <p class="help" style="margin:10px 0 0">Column names are flexible (Class/Semester/Grade/Batch · Subject/Paper/Course · Teacher/Faculty/Staff · Hours/Periods). For joint teaching write <b>Teacher A / Teacher B</b> — both will be kept free together.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="card">
+    <div class="card-h"><div class="step">2</div><div><h2>Settings</h2><p>Monday to Friday (no classes on Saturday or Sunday) · 5 periods a day by default</p></div></div>
+    <div class="grid2">
+      <div class="field"><span class="lbl">Institution / heading</span><input type="text" id="inst" placeholder="e.g. St. Mary's Higher Secondary School"></div>
+      <div class="field"><span class="lbl">Timetable title</span><input type="text" id="ttitle" placeholder="e.g. Timetable 2026–27, Odd Semester"></div>
+    </div>
+    <div class="sep"></div>
+    <div class="grid2">
+      <div class="field"><span class="lbl">Working days</span><div class="days"><span class="day on">Mon</span><span class="day on">Tue</span><span class="day on">Wed</span><span class="day on">Thu</span><span class="day on">Fri</span></div><span class="help">Saturday and Sunday are holidays</span></div>
+      <div class="field"><span class="lbl">Periods per day</span><div class="stepper"><button id="pMinus" aria-label="fewer">−</button><output id="pOut">5</output><button id="pPlus" aria-label="more">+</button></div></div>
+      <div class="field"><span class="lbl">Max continuous hours for a teacher</span><div class="seg" id="maxc"><button data-v="1">1</button><button data-v="2" class="on">2</button><button data-v="3">3</button><button data-v="4">4</button></div></div>
+      <div class="field"><span class="lbl">Same subject per day (per class)</span><div class="seg" id="cap"><button data-v="1">1</button><button data-v="2" class="on">Up to 2</button><button data-v="3">Up to 3</button><button data-v="99">Any</button></div></div>
+    </div>
+    <div class="sep"></div>
+    <label class="toggle"><input type="checkbox" id="useTime"><span class="sw"></span>Show period timings</label>
+    <div class="timing hide" id="timing">
+      <div class="field"><span class="lbl">Day starts</span><input type="time" id="tStart" value="09:30"></div>
+      <div class="field"><span class="lbl">Period (min)</span><input type="number" id="tDur" value="60" min="20" max="120"></div>
+      <div class="field"><span class="lbl">Break after period</span><select id="tBrk"></select></div>
+      <div class="field"><span class="lbl">Break (min)</span><input type="number" id="tBrkDur" value="45" min="5" max="120"></div>
+    </div>
+    <div class="sep"></div>
+    <button class="btn primary big" id="gen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Generate timetable</button>
+    <div class="progress hide" id="prog"><i></i></div>
+    <div class="status" id="status"></div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="card hide" id="out">
+    <div class="card-h"><div class="step">3</div><div><h2>Your timetable</h2><p id="outSub"></p></div></div>
+    <div id="checks"></div>
+    <div class="toolbar">
+      <div class="seg" id="viewSeg"><button data-v="class" class="on">Classes</button><button data-v="teacher">Teachers</button><button data-v="load">Workload</button></div>
+      <div class="row">
+        <select id="pick"></select>
+        <button class="btn" id="regen" title="Generate a different valid arrangement">↻ Another version</button>
+        <button class="btn" id="copy" title="Copy what is on screen">Copy</button>
+        <button class="btn primary" id="xlsx"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Excel</button>
+      </div>
+    </div>
+    <div id="view"></div>
+  </section>
+  <section class="card hide" id="admin">
+    <div class="card-h"><div class="step">★</div><div><h2>Registered users <span id="admCount" class="pill"></span></h2><p>Only you (the owner) can see this list</p></div></div>
+    <div class="row" style="margin-bottom:12px"><button class="btn primary" id="admXlsx">Download users (Excel)</button></div>
+    <div class="scroll"><table class="load" id="admTable" style="min-width:640px"></table></div>
+  </section>
+  <p class="foot">The Excel file has a sheet for all classes, all teachers, workload, and one sheet per class.</p>
+  <p class="credit">Developed by <b>Dr. Suby Baby</b> · Nirmala College Muvattupuzha (Autonomous)</p>
+</main>
+<div class="toast" id="toast"></div>
+<div class="modal hide" id="reg">
+  <form class="mbox" id="regForm" autocomplete="on">
+    <div class="mlogo">CF</div>
+    <h2>Welcome to ClashFree</h2>
+    <p class="msub">Please tell us who is using the timetable generator.</p>
+    <label class="field"><span class="lbl">Your name *</span><input type="text" id="rName" required maxlength="80" autocomplete="name" placeholder="e.g. Dr. Anu Joseph"></label>
+    <label class="field"><span class="lbl">College / institution *</span><input type="text" id="rCollege" required maxlength="120" autocomplete="organization" placeholder="e.g. Nirmala College Muvattupuzha"></label>
+    <label class="field"><span class="lbl">Email *</span><input type="email" id="rEmail" required maxlength="120" autocomplete="email" placeholder="name@college.edu"></label>
+    <div id="regErr" class="msg bad hide"></div>
+    <button class="btn primary big" type="submit">Continue</button>
+    <p class="mnote">Your details are shared with the developer, Dr. Suby Baby (Nirmala College Muvattupuzha), to keep a record of users.</p>
+  </form>
+</div>
+
+<script>
+// ---------- Timetable solver ----------
+const ALL_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+let DAYS = ALL_DAYS.slice(0, 5);
+let P = 5, D = 5, S = 25;
+function configure(days, periods) { DAYS = days; D = days.length; P = periods; S = D * P; }
+
+function splitTeachers(t) {
+  return String(t).split(/\s*(?:\/|,|&|\+|;|\band\b)\s*/i).map(x => x.trim()).filter(Boolean);
+}
+
+function buildProblem(rows) {
+  // rows: [{cls, subj, teacher, hours}]
+  const classes = [], teachers = [], errors = [], warnings = [];
+  const ci = {}, ti = {};
+  const groups = [];
+  const gIndex = {};
+  rows.forEach((r, i) => {
+    if (!r.cls || !r.subj || !r.teacher) { warnings.push(`Row ${i + 1} skipped (class, subject or teacher missing).`); return; }
+    const h = Math.round(Number(r.hours));
+    if (!(h > 0)) { warnings.push(`Row ${i + 1} (${r.subj}) skipped — hours must be a positive number.`); return; }
+    if (!(r.cls in ci)) { ci[r.cls] = classes.length; classes.push(r.cls); }
+    const tids = splitTeachers(r.teacher).map(t => { if (!(t in ti)) { ti[t] = teachers.length; teachers.push(t); } return ti[t]; });
+    const key = ci[r.cls] + '|' + r.subj + '|' + tids.join(',');
+    if (key in gIndex) groups[gIndex[key]].count += h;
+    else { gIndex[key] = groups.length; groups.push({ c: ci[r.cls], subj: r.subj, ts: tids, count: h, sk: ci[r.cls] + '|' + r.subj }); }
+  });
+  const classLoad = classes.map(() => 0), teacherLoad = teachers.map(() => 0);
+  groups.forEach(g => { classLoad[g.c] += g.count; g.ts.forEach(t => teacherLoad[t] += g.count); });
+  return { classes, teachers, groups, classLoad, teacherLoad, errors, warnings };
+}
+
+function precheck(pb, maxConsec) {
+  const errs = [];
+  // max periods a teacher can take in one day with no run longer than maxConsec
+  let perDay = 0; for (let p = 0; p < P; p++) if ((p % (maxConsec + 1)) < maxConsec) perDay++;
+  pb.classLoad.forEach((l, c) => { if (l > S) errs.push(`${pb.classes[c]} needs ${l} hours but only ${S} periods exist in a week.`); });
+  pb.teacherLoad.forEach((l, t) => { if (l > perDay * D) errs.push(`${pb.teachers[t]} has ${l} hours; with at most ${maxConsec} continuous hours the maximum possible is ${perDay * D} per week.`); });
+  return errs;
+}
+
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+class Solver {
+  constructor(pb, opts) {
+    this.pb = pb; this.maxC = opts.maxConsec; this.cap = opts.subjCap;
+    this.best = null; this.bestPlaced = -1; this.done = false; this.solution = null; this.restarts = 0;
+    this.total = pb.groups.reduce((a, g) => a + g.count, 0);
+  }
+  reset(cap) {
+    const pb = this.pb;
+    this.cg = pb.classes.map(() => new Array(S).fill(-1));
+    this.tb = pb.teachers.map(() => new Array(S).fill(0));
+    this.sd = {}; pb.groups.forEach(g => { this.sd[g.sk] = new Array(D).fill(0); });
+    this.rem = pb.groups.map(g => g.count);
+    this.placed = 0; this.nodes = 0; this.curCap = cap;
+    this.jitter = pb.groups.map(() => Math.random());
+  }
+  ok(gi, s) {
+    const g = this.pb.groups[gi];
+    if (this.cg[g.c][s] !== -1) return false;
+    const d = (s / P) | 0, p = s % P;
+    if (this.sd[g.sk][d] >= this.curCap) return false;
+    for (const t of g.ts) {
+      const row = this.tb[t];
+      if (row[s]) return false;
+      let run = 1;
+      for (let q = p - 1; q >= 0 && row[d * P + q]; q--) run++;
+      for (let q = p + 1; q < P && row[d * P + q]; q++) run++;
+      if (run > this.maxC) return false;
+    }
+    return true;
+  }
+  set(gi, s, v) {
+    const g = this.pb.groups[gi];
+    this.cg[g.c][s] = v ? gi : -1;
+    for (const t of g.ts) this.tb[t][s] += v ? 1 : -1;
+    this.sd[g.sk][(s / P) | 0] += v ? 1 : -1;
+    this.rem[gi] += v ? -1 : 1; this.placed += v ? 1 : -1;
+  }
+  dfs() {
+    if (this.placed === this.total) return true;
+    if (++this.nodes > this.limit) return false;
+    if (this.placed > this.bestPlaced) { this.bestPlaced = this.placed; this.best = this.cg.map(r => r.slice()); }
+    let bg = -1, bo = null;
+    for (let gi = 0; gi < this.rem.length; gi++) {
+      if (!this.rem[gi]) continue;
+      const o = [];
+      for (let s = 0; s < S; s++) if (this.ok(gi, s)) o.push(s);
+      // most constrained first: fewest options relative to hours left
+      if (bo === null || o.length - this.rem[gi] * 0.5 + this.jitter[gi] < bo.length - this.rem[bg] * 0.5 + this.jitter[bg]) { bg = gi; bo = o; }
+      if (o.length < this.rem[gi]) return false;
+    }
+    const g = this.pb.groups[bg];
+    const sd = this.sd[g.sk];
+    const sc = bo.map(s => {
+      const d = (s / P) | 0;
+      let tl = 0; for (const t of g.ts) for (let p = 0; p < P; p++) tl += this.tb[t][d * P + p];
+      return [s, sd[d] * 10 + tl * 1.5 + Math.random() * 3];
+    }).sort((a, b) => a[1] - b[1]);
+    for (const [s] of sc) {
+      this.set(bg, s, true);
+      if (this.dfs()) return true;
+      this.set(bg, s, false);
+      if (this.nodes > this.limit) return false;
+    }
+    return false;
+  }
+  // one randomized restart; returns true when solved
+  step() {
+    this.restarts++;
+    const relaxed = this.restarts > 300;
+    this.reset(relaxed ? this.cap + 1 : this.cap);
+    this.limit = 3000;
+    if (this.dfs()) { this.solution = this.cg.map(r => r.slice()); this.relaxedUsed = relaxed; this.done = true; return true; }
+    return false;
+  }
+}
+
+function verify(pb, cg, maxC) {
+  const tb = pb.teachers.map(() => new Array(S).fill(null));
+  const clashes = [], longRuns = [];
+  cg.forEach((row, c) => row.forEach((gi, s) => {
+    if (gi < 0) return;
+    pb.groups[gi].ts.forEach(t => {
+      if (tb[t][s] !== null) clashes.push(`${pb.teachers[t]}: ${DAYS[(s / P) | 0]} P${s % P + 1}`);
+      tb[t][s] = c;
+    });
+  }));
+  tb.forEach((row, t) => {
+    for (let d = 0; d < D; d++) { let run = 0; for (let p = 0; p < P; p++) { run = row[d * P + p] !== null ? run + 1 : 0; if (run > maxC) { longRuns.push(`${pb.teachers[t]} on ${DAYS[d]}`); break; } } }
+  });
+  return { clashes, longRuns, tb };
+}
+
+if (typeof module !== 'undefined') module.exports = { buildProblem, precheck, Solver, verify, DAYS, P, D, S };
+
+</script>
+<script>
+const $ = id => document.getElementById(id);
+const SAMPLES = {
+school: `Class	Subject	Teacher	Hours
+Class 8A	Mathematics	Ravi	6
+Class 8A	English	Meera	5
+Class 8A	Science	Anitha	5
+Class 8A	Social Studies	Joseph	4
+Class 8A	Hindi	Lakshmi	3
+Class 8A	Computer	Arun	2
+Class 8B	Mathematics	Ravi	6
+Class 8B	English	Meera	5
+Class 8B	Science	Anitha	5
+Class 8B	Social Studies	Joseph	4
+Class 8B	Hindi	Lakshmi	3
+Class 8B	Physical Education	Thomas	2
+Class 9A	Mathematics	Sunil	6
+Class 9A	English	Priya	5
+Class 9A	Physics	Anitha	3
+Class 9A	Chemistry	Deepa	3
+Class 9A	Social Studies	Joseph	4
+Class 9A	Computer	Arun	2
+Class 9B	Mathematics	Sunil	6
+Class 9B	English	Priya	5
+Class 9B	Physics	Deepa	3
+Class 9B	Chemistry	Deepa	3
+Class 9B	Hindi	Lakshmi	3
+Class 9B	Physical Education	Thomas	2`,
+college: `Class	Subject	Teacher	Hours
+BA English I	British Poetry	Dr. Maria	5
+BA English I	Indian Writing in English	Dr. Kiran	4
+BA English I	Environmental Studies	Dr. Nisha	3
+BA English I	Second Language	Fr. George	4
+BSc Physics I	Mechanics	Dr. Anil	5
+BSc Physics I	Mathematics I	Dr. Rose	5
+BSc Physics I	Chemistry Complementary	Dr. Nisha	4
+BSc Physics I	Physics Practical	Dr. Anil / Dr. Vinod	4
+BCom I	Financial Accounting	Dr. Suresh	5
+BCom I	Business Economics	Dr. Kiran	4
+BCom I	Business Statistics	Dr. Rose	4
+BCom I	Second Language	Fr. George	4
+BSc Computer Science II	Data Structures	Dr. Vinod	5
+BSc Computer Science II	Discrete Mathematics	Dr. Rose	4
+BSc Computer Science II	Programming Lab	Dr. Vinod / Dr. Anil	4
+BSc Computer Science II	Communication Skills	Dr. Maria	3
+MA Economics I	Microeconomics	Dr. Kiran	5
+MA Economics I	Quantitative Methods	Dr. Suresh	4
+MA Economics I	Development Economics	Dr. Nisha	4`};
+const TEMPLATE = 'Class\tSubject\tTeacher\tHours per week\n';
+
+const cfg = {days:[0,1,2,3,4], periods:5, maxC:2, cap:2};
+let state = null, view = 'class', running = false;
+
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),1900);}
+async function copyText(t,ok){try{await navigator.clipboard.writeText(t);toast(ok);}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast(ok);}catch(_){toast('Copy is blocked here');}ta.remove();}}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+const store = {get(k){try{return localStorage.getItem('ttg_'+k);}catch(e){return null;}}, set(k,v){try{localStorage.setItem('ttg_'+k,v);}catch(e){}}};
+
+// ---------- settings UI ----------
+function drawPeriods(){ $('pOut').textContent=cfg.periods;
+  const cur = $('tBrk').value || '3';
+  $('tBrk').innerHTML = '<option value="0">No break</option>'+Array.from({length:cfg.periods-1},(_,i)=>`<option value="${i+1}">After period ${i+1}</option>`).join('');
+  $('tBrk').value = (+cur < cfg.periods) ? cur : String(Math.ceil(cfg.periods/2)); }
+$('pMinus').onclick = () => { if(cfg.periods>2){cfg.periods--; drawPeriods();} };
+$('pPlus').onclick = () => { if(cfg.periods<10){cfg.periods++; drawPeriods();} };
+function seg(id, key){ $(id).onclick = e => { const b=e.target.closest('button'); if(!b) return; $(id).querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); cfg[key]=+b.dataset.v;
+  if(key==='maxC') $('chipConsec').textContent = `✓ No teacher teaches more than ${cfg.maxC} hour${cfg.maxC>1?'s':''} continuously`; }; }
+seg('maxc','maxC'); seg('cap','cap');
+$('useTime').onchange = () => $('timing').classList.toggle('hide', !$('useTime').checked);
+drawPeriods();
+
+// ---------- input parsing ----------
+function gridFromText(txt){
+  const lines = txt.replace(/\r/g,'').split('\n').filter(l=>l.trim());
+  const tab = lines.some(l=>l.includes('\t'));
+  return lines.map(l => tab ? l.split('\t') : l.split(','));
+}
+const TEACH_RE = /teacher|faculty|staff|lecturer|instructor|tutor|professor|faculty name|handled/i;
+function rowsFromGrid(grid){
+  grid = grid.filter(r => r && r.some(c => String(c ?? '').trim() !== ''));
+  if(!grid.length) return [];
+  let hi = grid.findIndex(r => r.some(c => TEACH_RE.test(String(c))));
+  let col = {cls:0, subj:1, teacher:2, hours:3};
+  if(hi >= 0 && hi < 6){
+    const h = grid[hi].map(c => String(c ?? '').toLowerCase());
+    const find = re => h.findIndex(c => re.test(c));
+    const c3=find(TEACH_RE), c2=find(/subject|paper|course title|course name|module|topic/), c4=find(/hour|period|credit|load|per week|no\.? of|count/);
+    let c1=find(/class|sem|batch|grade|std|standard|programme|program|division|section|year|group|course$/);
+    if(c1===c2) c1=-1;
+    col = {cls:c1>=0?c1:0, subj:c2>=0?c2:1, teacher:c3, hours:c4};
+    grid = grid.slice(hi+1);
+  } else if(grid[0].length>3 && isNaN(Number(String(grid[0][3]??'').trim()))) grid = grid.slice(1);
+  const t = v => String(v ?? '').trim();
+  return grid.map(r => ({cls:t(r[col.cls]), subj:t(r[col.subj]), teacher:t(r[col.teacher]), hours: col.hours>=0 ? t(r[col.hours]) : '1'}));
+}
+function rowsToText(rows){return 'Class\tSubject\tTeacher\tHours\n'+rows.map(r=>[r.cls,r.subj,r.teacher,r.hours].join('\t')).join('\n');}
+
+function updateSummary(){
+  const rows = rowsFromGrid(gridFromText($('data').value)).filter(r=>r.cls&&r.subj&&r.teacher&&+r.hours>0);
+  if(!rows.length){ $('summary').innerHTML=''; return; }
+  const cl=new Set(rows.map(r=>r.cls)), te=new Set(rows.flatMap(r=>splitTeachers(r.teacher)));
+  const hrs=rows.reduce((a,r)=>a+Math.round(+r.hours),0);
+  $('summary').innerHTML = `<span class="pill"><b>${cl.size}</b> classes</span><span class="pill"><b>${te.size}</b> teachers</span><span class="pill"><b>${rows.length}</b> subjects</span><span class="pill"><b>${hrs}</b> hours / week</span>`;
+}
+let sumT; $('data').addEventListener('input', ()=>{ clearTimeout(sumT); sumT=setTimeout(()=>{updateSummary(); store.set('data',$('data').value);},250); });
+
+function readFile(f){
+  if(!f) return;
+  const rd = new FileReader();
+  rd.onload = ev => {
+    try{
+      let rows, sheet='';
+      if(/\.csv$/i.test(f.name) && typeof XLSX==='undefined'){ rows = rowsFromGrid(gridFromText(new TextDecoder().decode(ev.target.result))); }
+      else {
+        if(typeof XLSX === 'undefined') throw new Error('The Excel reader could not load. Copy the rows in Excel and paste them into the box instead.');
+        const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
+        sheet = wb.SheetNames[0];
+        rows = rowsFromGrid(XLSX.utils.sheet_to_json(wb.Sheets[sheet], {header:1, defval:'', raw:false}));
+      }
+      $('data').value = rowsToText(rows); store.set('data',$('data').value);
+      $('dropT').textContent = f.name; $('dropS').textContent = `${rows.length} rows read${sheet?` from sheet “${sheet}”`:''} · tap to choose another file`;
+      $('inmsg').innerHTML=''; updateSummary();
+    }catch(err){ $('inmsg').innerHTML = `<div class="msg bad">${esc(err.message)}</div>`; }
+  };
+  rd.readAsArrayBuffer(f);
+}
+$('file').addEventListener('change', e => { readFile(e.target.files[0]); e.target.value=''; });
+['dragenter','dragover'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.add('over');}));
+['dragleave','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.remove('over');}));
+$('drop').addEventListener('drop', e => readFile(e.dataTransfer.files[0]));
+function loadSample(k){ $('data').value = SAMPLES[k]; $('inmsg').innerHTML=''; updateSummary(); store.set('data',$('data').value); }
+$('sSchool').onclick = () => loadSample('school');
+$('sCollege').onclick = () => loadSample('college');
+$('tpl').onclick = () => copyText(TEMPLATE, 'Template headings copied — paste into Excel');
+$('clear').onclick = () => { $('data').value=''; $('inmsg').innerHTML=''; $('summary').innerHTML=''; store.set('data',''); $('dropT').textContent='Upload Excel file'; $('dropS').textContent='Tap to choose, or drag a .xlsx / .xls / .csv file here'; };
+['inst','ttitle'].forEach(id=>{ const v=store.get(id); if(v) $(id).value=v; $(id).addEventListener('input',()=>{store.set(id,$(id).value); if(state) renderView();}); });
+{ const d=store.get('data'); if(d) { $('data').value=d; updateSummary(); } }
+
+// ---------- timings ----------
+function timeLabels(){
+  if(!$('useTime').checked) return null;
+  const [h,m] = ($('tStart').value||'09:30').split(':').map(Number);
+  let t = h*60+m; const dur=Math.max(5,+$('tDur').value||60), brk=+$('tBrk').value, bd=Math.max(0,+$('tBrkDur').value||0);
+  const fmt = x => { let hh=Math.floor(x/60)%24, mm=x%60, ap=hh>=12?'pm':'am'; hh=hh%12||12; return `${hh}:${String(mm).padStart(2,'0')}`; };
+  const out=[];
+  for(let p=0;p<P;p++){ out.push(`${fmt(t)}–${fmt(t+dur)}`); t+=dur; if(brk===p+1) t+=bd; }
+  return out;
+}
+
+// ---------- generate ----------
+function generate(){
+  if(running) return;
+  if(!reg){ openReg(); return; }
+  const rows = rowsFromGrid(gridFromText($('data').value));
+  if(!rows.length){ $('inmsg').innerHTML = '<div class="msg bad">Add your subjects first — upload an Excel file, paste rows, or try an example.</div>'; $('data').scrollIntoView({behavior:'smooth',block:'center'}); return; }
+  configure(cfg.days.map(i=>ALL_DAYS[i]), cfg.periods);
+  const pb = buildProblem(rows);
+  const errs = precheck(pb, cfg.maxC);
+  let h = '';
+  if(pb.warnings.length) h += `<div class="msg warn">${pb.warnings.length} row(s) skipped:<ul>${pb.warnings.slice(0,8).map(w=>`<li>${esc(w)}</li>`).join('')}</ul></div>`;
+  if(errs.length){ h += `<div class="msg bad"><b>This can’t be scheduled with the current settings:</b><ul>${errs.map(e=>`<li>${esc(e)}</li>`).join('')}</ul>Add a working day or period, or reduce those hours.</div>`; $('inmsg').innerHTML = h; $('inmsg').scrollIntoView({behavior:'smooth',block:'center'}); return; }
+  $('inmsg').innerHTML = h;
+  const solver = new Solver(pb, {maxConsec:cfg.maxC, subjCap:cfg.cap});
+  running = true; $('gen').disabled = true; $('regen').disabled = true;
+  $('prog').classList.remove('hide'); const bar = $('prog').firstElementChild;
+  const MAX = 1500, t0 = performance.now();
+  const tick = () => {
+    const end = performance.now() + 120;
+    while(!solver.done && solver.restarts < MAX && performance.now() < end) solver.step();
+    bar.style.width = Math.min(100, solver.restarts / MAX * 100) + '%';
+    $('status').textContent = `Arranging… (${solver.restarts} attempts)`;
+    if(solver.done || solver.restarts >= MAX){
+      running = false; $('gen').disabled = false; $('regen').disabled = false; $('prog').classList.add('hide');
+      $('status').textContent = solver.done ? `Generated in ${((performance.now()-t0)/1000).toFixed(1)} seconds` : 'Could not place every hour — see details below';
+      state = {pb, maxC:cfg.maxC, cap:cfg.cap, cg: solver.done ? solver.solution : solver.best, solved: solver.done, relaxed: solver.relaxedUsed, total: solver.total, times: timeLabels(), brk: $('useTime').checked ? +$('tBrk').value : 0, days: DAYS.slice()};
+      fillPick(); render(); if(solver.done) logTimetable(state);
+      $('out').classList.remove('hide'); $('out').scrollIntoView({behavior:'smooth', block:'start'});
+    } else setTimeout(tick, 0);
+  };
+  setTimeout(tick, 0);
+}
+$('gen').onclick = generate; $('regen').onclick = generate;
+$('viewSeg').onclick = e => { const b=e.target.closest('button'); if(!b) return; view=b.dataset.v; $('viewSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); fillPick(); renderView(); };
+$('pick').onchange = renderView;
+
+function fillPick(){
+  if(!state) return;
+  const list = view==='class' ? state.pb.classes : view==='teacher' ? state.pb.teachers : null;
+  $('pick').classList.toggle('hide', !list);
+  if(list) $('pick').innerHTML = `<option value="-1">All ${view==='class'?'classes':'teachers'} (${list.length})</option>` + list.map((n,i)=>`<option value="${i}">${esc(n)}</option>`).join('');
+}
+
+// ---------- render ----------
+function hue(str){let h=7;for(const c of str)h=(h*31+c.charCodeAt(0))%360;return h;}
+function slotStyle(subj){const h=hue(subj);return `background:hsl(${h} 75% 96%);border-left-color:hsl(${h} 60% 55%);color:hsl(${h} 45% 22%)`;}
+const tick = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+const cross = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="3.5" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>';
+
+function render(){
+  const {pb, cg, maxC, solved, relaxed, total} = state;
+  const v = verify(pb, cg, maxC); state.v = v;
+  const placed = cg.reduce((a,r)=>a+r.filter(x=>x>=0).length,0);
+  const chk = (ok, txt) => `<div class="check ${ok?'':'no'}"><span class="dot">${ok?tick:cross}</span><span>${txt}</span></div>`;
+  let h = `<div class="checks">${chk(solved, solved?`All ${total} hours scheduled`:`${placed} of ${total} hours scheduled`)}${chk(!v.clashes.length,'No teacher in two classes at once')}${chk(!v.longRuns.length,`No teacher over ${maxC} continuous hour${maxC>1?'s':''}`)}</div>`;
+  if(solved && relaxed) h += `<div class="msg warn">To fit everything, a subject comes ${state.cap+1} times on some days (one more than your setting).</div>`;
+  if(!solved){
+    const left = pb.groups.map((g,gi)=>({g, n: g.count - cg[g.c].filter(x=>x===gi).length})).filter(x=>x.n>0);
+    h += `<div class="msg bad"><b>Not yet scheduled:</b><ul>${left.map(x=>`<li>${esc(pb.classes[x.g.c])} – ${esc(x.g.subj)} (${esc(x.g.ts.map(t=>pb.teachers[t]).join(' / '))}): ${x.n} hr</li>`).join('')}</ul>Try “Another version”, allow more of the same subject per day, add a period/day, or share a heavily loaded teacher’s hours.</div>`;
+  }
+  const slots = pb.classes.length*S;
+  h += `<div class="kpis"><div class="kpi"><b>${pb.classes.length}</b><span>Classes</span></div><div class="kpi"><b>${pb.teachers.length}</b><span>Teachers</span></div><div class="kpi"><b>${placed}</b><span>Hours placed</span></div><div class="kpi"><b>${slots-placed}</b><span>Free periods</span></div></div>`;
+  $('checks').innerHTML = h;
+  $('outSub').textContent = `${state.days.length} days × ${P} periods · ${pb.classes.length} classes · ${pb.teachers.length} teachers`;
+  renderView();
+}
+
+function head(){
+  const {times, brk} = state; let h = '<thead><tr><th style="text-align:left">Day</th>';
+  for(let p=0;p<P;p++){ h += `<th>Period ${p+1}${times?`<small>${times[p]}</small>`:''}</th>`; if(brk===p+1) h += `<th class="brk"><span>BREAK</span></th>`; }
+  return h + '</tr></thead>';
+}
+function docTitle(){
+  const a=$('inst').value.trim(), b=$('ttitle').value.trim();
+  return (a||b) ? `<div class="doc-title">${a?`<h3>${esc(a)}</h3>`:''}${b?`<p>${esc(b)}</p>`:''}</div>` : '';
+}
+function grid(name, meta, cellFn){
+  let h = `<div class="tt"><div class="tt-h"><h4>${esc(name)}</h4><span>${meta}</span></div><div class="scroll"><table>${head()}<tbody>`;
+  for(let d=0; d<D; d++){
+    h += `<tr><th>${DAYS[d]}</th>`;
+    for(let p=0; p<P; p++){ h += cellFn(d*P+p); if(state.brk===p+1) h += `<td class="brk"></td>`; }
+    h += '</tr>';
+  }
+  return h + '</tbody></table></div></div>';
+}
+function renderView(){
+  if(!state) return;
+  const {pb, cg, v} = state, sel = +$('pick').value; let h = docTitle();
+  if(view === 'class'){
+    pb.classes.forEach((cn, c) => { if(sel>=0 && sel!==c) return;
+      h += grid(cn, `${cg[c].filter(x=>x>=0).length} hrs / week`, s => { const gi=cg[c][s]; if(gi<0) return '<td class="free">Free</td>';
+        const g=pb.groups[gi]; return `<td class="cell"><div class="slot" style="${slotStyle(g.subj)}"><div class="s">${esc(g.subj)}</div><div class="t">${esc(g.ts.map(t=>pb.teachers[t]).join(' / '))}</div></div></td>`; });
+    });
+  } else if(view === 'teacher'){
+    pb.teachers.forEach((tn, t) => { if(sel>=0 && sel!==t) return;
+      h += grid(tn, `${pb.teacherLoad[t]} hrs / week`, s => { const c=v.tb[t][s]; if(c===null) return '<td class="free">—</td>';
+        const g=pb.groups[cg[c][s]]; return `<td class="cell"><div class="slot" style="${slotStyle(g.subj)}"><div class="s">${esc(pb.classes[c])}</div><div class="t">${esc(g.subj)}</div></div></td>`; });
+    });
+  } else {
+    const max = Math.max(...pb.teacherLoad, 1);
+    h += `<div class="scroll"><table class="load"><thead><tr><th style="text-align:left">Teacher</th>${DAYS.map(d=>`<th>${d.slice(0,3)}</th>`).join('')}<th>Total</th><th>Longest run</th><th style="min-width:100px">Load</th></tr></thead><tbody>`;
+    pb.teachers.forEach((tn, t) => {
+      let tot=0, longest=0; const per=[];
+      for(let d=0; d<D; d++){ let n=0, run=0; for(let p=0;p<P;p++){ if(v.tb[t][d*P+p]!==null){n++;run++;longest=Math.max(longest,run);} else run=0; } per.push(n); tot+=n; }
+      h += `<tr><th>${esc(tn)}</th>${per.map(n=>`<td>${n||'<span style="color:#c0c5d0">0</span>'}</td>`).join('')}<td><b>${tot}</b></td><td>${longest} hr</td><td><div class="bar-in"><i style="width:${tot/max*100}%"></i></div></td></tr>`;
+    });
+    h += '</tbody></table></div>';
+  }
+  $('view').innerHTML = h;
+}
+
+// ---------- copy for Excel ----------
+$('copy').onclick = () => {
+  if(!state) return;
+  const {pb, cg, v, times, brk} = state, sel = +$('pick').value, L = [];
+  const a=$('inst').value.trim(), b=$('ttitle').value.trim(); if(a) L.push(a); if(b) L.push(b); if(a||b) L.push('');
+  const hdrCells=['Day']; for(let p=0;p<P;p++){ hdrCells.push(`Period ${p+1}${times?` (${times[p]})`:''}`); if(brk===p+1) hdrCells.push('Break'); }
+  const hdr = hdrCells.join('\t');
+  const block = (name, fn) => { L.push(name, hdr); for(let d=0;d<D;d++){ const r=[DAYS[d]]; for(let p=0;p<P;p++){ r.push(fn(d*P+p)); if(brk===p+1) r.push(''); } L.push(r.join('\t')); } L.push(''); };
+  if(view === 'class') pb.classes.forEach((cn,c)=>{ if(sel>=0&&sel!==c) return; block(cn, s=>{ const gi=cg[c][s]; return gi<0?'Free':`${pb.groups[gi].subj} (${pb.groups[gi].ts.map(t=>pb.teachers[t]).join(' / ')})`; }); });
+  else if(view === 'teacher') pb.teachers.forEach((tn,t)=>{ if(sel>=0&&sel!==t) return; block(tn, s=>{ const c=v.tb[t][s]; return c===null?'-':`${pb.classes[c]} - ${pb.groups[cg[c][s]].subj}`; }); });
+  else { L.push(['Teacher',...DAYS,'Total'].join('\t')); pb.teachers.forEach((tn,t)=>{ const per=[]; for(let d=0;d<D;d++){let n=0;for(let p=0;p<P;p++) if(v.tb[t][d*P+p]!==null) n++; per.push(n);} L.push([tn,...per,per.reduce((x,y)=>x+y,0)].join('\t')); }); }
+  copyText(L.join('\n'), 'Copied — paste into Excel or Google Sheets');
+};
+
+// ================= ClashFree: config =================
+const APP = 'ClashFree';
+const CREDIT = 'Developed by Dr. Suby Baby, Nirmala College Muvattupuzha (Autonomous)';
+// When this page is hosted on its own website, paste a Google Apps Script web-app URL here
+// to collect user registrations in a Google Sheet. Leave empty inside Claude.
+const SHEET_URL = '';
+// Google Form used as the free user database (filled in from the form's pre-filled link)
+const FORM = { action: '', name: '', college: '', email: '', activity: '' };
+
+// ================= registration =================
+let reg = null; try { reg = JSON.parse(store.get('reg') || 'null'); } catch (e) {}
+let capP = null;
+function caps(){
+  if (!window.claude || typeof claude.use !== 'function') return Promise.resolve([null, null]);
+  if (!capP) capP = Promise.all([claude.use('db').catch(()=>null), claude.use('user').catch(()=>null)]);
+  return capP;
+}
+async function myDoc(){
+  const [db, user] = await caps(); if (!db || !user) return null;
+  try { const id = await user.id(); return id ? db.doc('registrations/' + id) : null; } catch (e) { return null; }
+}
+function postSheet(obj){
+  if (window.google && google.script && google.script.run) { try { google.script.run.withFailureHandler(()=>{}).record(obj); } catch (e) {} return; }
+  if (FORM.action) {
+    try {
+      const act = obj.event === 'timetable' ? `Timetable generated: ${obj.classes} classes, ${obj.teachers} teachers, ${obj.hours} hrs/week` : obj.event === 'register' ? 'Registered' : 'Visit';
+      const p = new URLSearchParams();
+      p.append(FORM.name, obj.name || ''); p.append(FORM.college, obj.college || ''); p.append(FORM.email, obj.email || ''); p.append(FORM.activity, act);
+      fetch(FORM.action, {method:'POST', mode:'no-cors', body: p}).catch(()=>{});
+    } catch (e) {}
+  }
+  if (!SHEET_URL) return;
+  try { fetch(SHEET_URL, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(obj)}).catch(()=>{}); } catch (e) {}
+}
+let writing = Promise.resolve();
+function recordUse(addTimetable){
+  writing = writing.then(async () => {
+    const d = await myDoc(); if (!d || !reg) return;
+    try {
+      const s = await d.get(); const prev = s.exists ? s.data() : {}; const now = new Date().toISOString();
+      await d.set({name: reg.name, college: reg.college, email: reg.email, firstUsed: prev.firstUsed || now, lastUsed: now, timetables: (+prev.timetables || 0) + (addTimetable ? 1 : 0)});
+    } catch (e) {}
+  });
+}
+function showWho(){
+  if (!reg) return;
+  $('who').textContent = `👤 ${reg.name} · ${reg.college}`; $('who').classList.remove('hide');
+  if (!$('inst').value.trim()) $('inst').value = reg.college;
+}
+function openReg(){
+  if (reg) { $('rName').value = reg.name; $('rCollege').value = reg.college; $('rEmail').value = reg.email; }
+  $('reg').classList.remove('hide'); setTimeout(()=>$('rName').focus(), 60);
+}
+$('who').onclick = openReg;
+$('regForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = $('rName').value.trim(), college = $('rCollege').value.trim(), email = $('rEmail').value.trim();
+  const err = !name ? 'Please enter your name.' : !college ? 'Please enter your college or institution.' : !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) ? 'Please enter a valid email address.' : '';
+  if (err) { $('regErr').textContent = err; $('regErr').classList.remove('hide'); return; }
+  $('regErr').classList.add('hide');
+  reg = {name, college, email}; store.set('reg', JSON.stringify(reg));
+  $('reg').classList.add('hide'); showWho(); toast(`Welcome, ${name}!`);
+  postSheet({event:'register', ...reg, at: new Date().toISOString()});
+  recordUse(false);
+});
+if (reg) { showWho(); recordUse(false); postSheet({event:'visit', ...reg, at: new Date().toISOString()}); } else openReg();
+function logTimetable(st){
+  postSheet({event:'timetable', ...reg, classes: st.pb.classes.length, teachers: st.pb.teachers.length, hours: st.total, at: new Date().toISOString()});
+  recordUse(true);
+}
+
+// ================= owner: registered users =================
+let admRows = [];
+const fmtDate = s => { if (!s) return ''; const d = new Date(s); return isNaN(d) ? String(s) : d.toLocaleString('en-IN', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}); };
+function drawAdm(){
+  $('admCount').textContent = admRows.length;
+  $('admTable').innerHTML = `<thead><tr><th style="text-align:left">Name</th><th style="text-align:left">College</th><th style="text-align:left">Email</th><th>First used</th><th>Last used</th><th>Timetables</th></tr></thead><tbody>` +
+    (admRows.length ? admRows.map(r => `<tr><th>${esc(r.name||'')}</th><td style="text-align:left">${esc(r.college||'')}</td><td style="text-align:left">${esc(r.email||'')}</td><td>${esc(fmtDate(r.firstUsed))}</td><td>${esc(fmtDate(r.lastUsed))}</td><td>${+r.timetables||0}</td></tr>`).join('')
+      : '<tr><td colspan="6" style="color:var(--muted)">No users yet.</td></tr>') + '</tbody>';
+}
+(async () => {
+  const [db, user] = await caps(); if (!db || !user) return;
+  let owner = false; try { owner = !!(await user.isOwner()); } catch (e) {}
+  if (!owner) return;
+  $('admin').classList.remove('hide'); drawAdm();
+  const t = setTimeout(()=>{ if(!admRows.length) $('admTable').innerHTML = '<tr><td style="color:var(--muted)">Loading the list is taking longer than usual…</td></tr>'; }, 10000);
+  db.collection('registrations').onSnapshot(snap => {
+    if (!snap.metadata.fromCache) clearTimeout(t);
+    admRows = snap.docs.map(d => d.data()).sort((a,b) => String(b.lastUsed||'').localeCompare(String(a.lastUsed||''))); drawAdm();
+  }, () => { clearTimeout(t); $('admTable').innerHTML = '<tr><td>Could not load the list.</td></tr>'; });
+})();
+
+// ================= Excel export =================
+function hslHex(h, s, l){ s/=100; l/=100; const k=n=>(n+h/30)%12, a=s*Math.min(l,1-l), f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1))); return [f(0),f(8),f(4)].map(x=>Math.round(x*255).toString(16).padStart(2,'0')).join('').toUpperCase(); }
+const LN = {style:'thin', color:{rgb:'D0D5DD'}}, BOR = {top:LN, bottom:LN, left:LN, right:LN};
+const ST = {
+  title: {font:{bold:true, sz:16, color:{rgb:'1E1B4B'}}, alignment:{horizontal:'center', vertical:'center'}},
+  sub:   {font:{sz:11, color:{rgb:'475467'}}, alignment:{horizontal:'center'}},
+  sec:   {font:{bold:true, sz:12, color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:'3730A3'}}, alignment:{vertical:'center', indent:1}},
+  head:  {font:{bold:true, sz:10, color:{rgb:'344054'}}, fill:{fgColor:{rgb:'EEF0FF'}}, alignment:{horizontal:'center', vertical:'center', wrapText:true}, border:BOR},
+  day:   {font:{bold:true, sz:10, color:{rgb:'18202F'}}, fill:{fgColor:{rgb:'F9FAFB'}}, alignment:{vertical:'center', indent:1}, border:BOR},
+  free:  {font:{sz:9, color:{rgb:'98A2B3'}}, alignment:{horizontal:'center', vertical:'center'}, border:BOR},
+  brk:   {font:{bold:true, sz:8, color:{rgb:'98A2B3'}}, fill:{fgColor:{rgb:'F2F4F7'}}, alignment:{horizontal:'center', vertical:'center', textRotation:90}, border:BOR},
+  num:   {font:{sz:10}, alignment:{horizontal:'center', vertical:'center'}, border:BOR},
+  numB:  {font:{bold:true, sz:10}, alignment:{horizontal:'center', vertical:'center'}, border:BOR},
+  txt:   {font:{sz:10}, alignment:{vertical:'center', wrapText:true}, border:BOR},
+  foot:  {font:{italic:true, sz:9, color:{rgb:'667085'}}},
+};
+const slotSt = subj => { const h = hue(subj); return {font:{sz:10, bold:false, color:{rgb:hslHex(h,45,22)}}, fill:{fgColor:{rgb:hslHex(h,75,92)}}, alignment:{horizontal:'center', vertical:'center', wrapText:true}, border:BOR}; };
+
+class XSheet {
+  constructor(){ this.rows=[]; this.st={}; this.merges=[]; this.h=[]; }
+  add(vals, style, o={}){
+    const r = this.rows.length; this.rows.push(vals);
+    const n = Math.max(vals.length, o.merge||0);
+    for (let c=0; c<n; c++){ const s = typeof style==='function' ? style(c, vals[c]) : style; if (s) this.st[r+','+c] = s; }
+    if (o.merge && o.merge>1) this.merges.push({s:{r,c:0}, e:{r,c:o.merge-1}});
+    if (o.h) this.h[r] = {hpt:o.h};
+    return r;
+  }
+  build(widths){
+    const ws = XLSX.utils.aoa_to_sheet(this.rows.length ? this.rows : [['']]);
+    for (const k in this.st){ const [r,c] = k.split(',').map(Number); const a = XLSX.utils.encode_cell({r,c}); if (!ws[a]) ws[a] = {t:'s', v:''}; ws[a].s = this.st[k]; }
+    const ref = XLSX.utils.decode_range(ws['!ref']); ref.e.c = Math.max(ref.e.c, widths.length-1); ws['!ref'] = XLSX.utils.encode_range(ref);
+    ws['!merges'] = this.merges; ws['!rows'] = this.h; ws['!cols'] = widths.map(w=>({wch:w}));
+    return ws;
+  }
+}
+function docHeader(sh, ncol){
+  const inst = $('inst').value.trim() || (reg && reg.college) || 'Timetable', tt = $('ttitle').value.trim();
+  sh.add([inst], ST.title, {merge:ncol, h:26});
+  if (tt) sh.add([tt], ST.sub, {merge:ncol, h:18});
+  sh.add([`Monday – Friday · ${P} periods a day` + (reg ? ` · Prepared by ${reg.name}, ${reg.college}` : '') + ` · ${new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}`], ST.sub, {merge:ncol});
+  sh.add([]);
+}
+function docFooter(sh, ncol){ sh.add([]); sh.add([`Generated with ${APP} — Smart Timetable Generator · ${CREDIT}`], ST.foot, {merge:ncol}); }
+function ttCols(){ const {brk} = state; const w=[13]; for(let p=0;p<P;p++){ w.push(22); if(brk===p+1) w.push(5); } return w; }
+function ttBlock(sh, name, meta, cellFn){
+  const {times, brk} = state, ncol = 1 + P + (brk ? 1 : 0);
+  sh.add([name + (meta ? `   (${meta})` : '')], ST.sec, {merge:ncol, h:22});
+  const hd = ['Day']; for (let p=0;p<P;p++){ hd.push(`Period ${p+1}` + (times ? `\n${times[p]}` : '')); if (brk===p+1) hd.push(''); }
+  sh.add(hd, (c)=> (brk && c===brk+1) ? ST.brk : ST.head, {h: times ? 30 : 20});
+  const first = sh.rows.length;
+  for (let d=0; d<D; d++){
+    const vals=[DAYS[d]], sts=[ST.day];
+    for (let p=0;p<P;p++){ const [v, s] = cellFn(d*P+p); vals.push(v); sts.push(s); if (brk===p+1){ vals.push(d===0?'BREAK':''); sts.push(ST.brk); } }
+    sh.add(vals, c=>sts[c], {h:38});
+  }
+  if (brk) sh.merges.push({s:{r:first, c:brk+1}, e:{r:first+D-1, c:brk+1}});
+  sh.add([]);
+}
+const classCell = c => s => { const gi = state.cg[c][s]; if (gi<0) return ['Free', ST.free]; const g = state.pb.groups[gi]; return [`${g.subj}\n${g.ts.map(t=>state.pb.teachers[t]).join(' / ')}`, slotSt(g.subj)]; };
+const teacherCell = t => s => { const c = state.v.tb[t][s]; if (c===null) return ['—', ST.free]; const g = state.pb.groups[state.cg[c][s]]; return [`${state.pb.classes[c]}\n${g.subj}`, slotSt(g.subj)]; };
+
+function buildWorkbook(){
+  const {pb, cg, v} = state, wb = XLSX.utils.book_new(), cols = ttCols(), ncol = cols.length, used = new Set();
+  const sname = n => { let b = String(n).replace(/[\\\/\?\*\[\]:]/g,' ').trim().slice(0,28) || 'Sheet', s=b, i=2; while(used.has(s.toLowerCase())) s = `${b} (${i++})`; used.add(s.toLowerCase()); return s; };
+  let sh = new XSheet(); docHeader(sh, ncol);
+  pb.classes.forEach((cn,c)=> ttBlock(sh, cn, `${cg[c].filter(x=>x>=0).length} hrs/week`, classCell(c)));
+  docFooter(sh, ncol); XLSX.utils.book_append_sheet(wb, sh.build(cols), sname('All Classes'));
+  sh = new XSheet(); docHeader(sh, ncol);
+  pb.teachers.forEach((tn,t)=> ttBlock(sh, tn, `${pb.teacherLoad[t]} hrs/week`, teacherCell(t)));
+  docFooter(sh, ncol); XLSX.utils.book_append_sheet(wb, sh.build(cols), sname('All Teachers'));
+  // workload
+  const wc = [24, ...DAYS.map(()=>8), 9, 16]; sh = new XSheet(); docHeader(sh, wc.length);
+  sh.add(['Teacher', ...DAYS.map(d=>d.slice(0,3)), 'Total', 'Longest continuous'], ST.head, {h:20});
+  pb.teachers.forEach((tn,t)=>{ let tot=0, longest=0; const per=[];
+    for (let d=0; d<D; d++){ let n=0, run=0; for (let p=0;p<P;p++){ if (v.tb[t][d*P+p]!==null){ n++; run++; longest=Math.max(longest,run);} else run=0; } per.push(n); tot+=n; }
+    sh.add([tn, ...per, tot, `${longest} hr`], c => c===0 ? ST.day : c===per.length+1 ? ST.numB : ST.num, {h:18}); });
+  docFooter(sh, wc.length); XLSX.utils.book_append_sheet(wb, sh.build(wc), sname('Workload'));
+  // one sheet per class
+  pb.classes.forEach((cn,c)=>{ const s = new XSheet(); docHeader(s, ncol); ttBlock(s, cn, `${cg[c].filter(x=>x>=0).length} hrs/week`, classCell(c)); docFooter(s, ncol); XLSX.utils.book_append_sheet(wb, s.build(cols), sname(cn)); });
+  wb.Props = {Title: 'Timetable', Author: reg ? reg.name : APP, Company: reg ? reg.college : ''};
+  return wb;
+}
+async function saveFile(wb, filename){
+  const out = XLSX.write(wb, {bookType:'xlsx', type:'array', cellStyles:true, bookSST:true});
+  const blob = new Blob([out], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  if (window.claude && typeof claude.use === 'function'){
+    const dl = await claude.use('downloads').catch(()=>null);
+    if (dl){
+      try { await dl.save({filename, data: blob}); toast('Excel file saved'); return; }
+      catch (e){ if (e && e.code === 'declined') return; if (e && e.code === 'rate_limited') { toast('A save is already waiting for your answer'); return; } }
+    }
+  }
+  try { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000); toast('Downloading Excel file…'); }
+  catch (e){ toast('Download is not available here — use Copy instead'); }
+}
+const safeName = s => String(s).replace(/[^\w\-. ]+/g,' ').replace(/\s+/g,' ').trim().slice(0,50);
+$('xlsx').onclick = async () => {
+  if (!state) return;
+  if (typeof XLSX === 'undefined') return toast('Excel library did not load — use Copy instead');
+  const b = $('xlsx'); b.disabled = true;
+  try { await saveFile(buildWorkbook(), `${safeName($('inst').value || (reg && reg.college) || 'Timetable')} - ${APP} Timetable.xlsx`); }
+  catch (e){ console.error(e); toast('Could not create the Excel file'); }
+  b.disabled = false;
+};
+$('admXlsx').onclick = async () => {
+  const sh = new XSheet(), w = [26, 34, 32, 20, 20, 12];
+  sh.add([`${APP} — Registered users`], ST.title, {merge:w.length, h:26});
+  sh.add([`Exported ${new Date().toLocaleString('en-IN')} · ${admRows.length} users`], ST.sub, {merge:w.length}); sh.add([]);
+  sh.add(['Name','College / Institution','Email','First used','Last used','Timetables'], ST.head, {h:20});
+  admRows.forEach(r => sh.add([r.name||'', r.college||'', r.email||'', fmtDate(r.firstUsed), fmtDate(r.lastUsed), +r.timetables||0], c => c===5 ? ST.num : ST.txt));
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, sh.build(w), 'Users');
+  await saveFile(wb, `${APP} users ${new Date().toISOString().slice(0,10)}.xlsx`);
+};
+</script>
+</body>
+</html>
