@@ -211,7 +211,7 @@ table.master tbody.odd td.free{background:#fcfcfd}
 <main class="wrap">
   <!-- STEP 1 -->
   <section class="card">
-    <div class="card-h"><div class="step">1</div><div><h2>Add classes, subjects &amp; teachers</h2><p>One row per subject: <b>Class · Subject · Teacher · Hours per week</b></p></div></div>
+    <div class="card-h"><div class="step">1</div><div><h2>Add classes, subjects &amp; teachers</h2><p>One row per subject: <b>Class · Subject · Teacher · Allotted hrs</b></p></div></div>
     <a class="tplcard" href="https://drsubybaby-dotcom.github.io/clashfree/ClashFree_College_Template.xlsx" download target="_blank" rel="noopener" style="margin-bottom:12px">
       <span class="xl">XLS</span><span><b>New here? Start with the college template</b><br><small>Download · fill the yellow cells · upload below</small></span><span class="arr">⬇</span>
     </a>
@@ -222,7 +222,7 @@ table.master tbody.odd td.free{background:#fcfcfd}
     </label>
     <input type="file" id="file" accept=".xlsx,.xls,.csv,.ods">
     <div class="or">or paste from Excel / edit below</div>
-    <textarea id="data" spellcheck="false" placeholder="Class	Subject	Teacher	Hours&#10;Class 8A	Mathematics	Ravi	6&#10;Class 8A	English	Meera	5&#10;BSc Physics I	Mechanics	Dr. Anil / Dr. Rose	4"></textarea>
+    <textarea id="data" spellcheck="false" placeholder="Class	Subject	Teacher	Allotted hrs&#10;1K	Business Regulatory Framework	AT	5&#10;2K	Corporate Accounting	SK	5&#10;3K	Spreadsheet &amp; AI Tools – Lab	JJ / ETJ	5"></textarea>
     <div class="row between" style="margin-top:10px">
       <div class="row">
         <button class="btn" id="sSchool">School example</button>
@@ -235,7 +235,7 @@ table.master tbody.odd td.free{background:#fcfcfd}
     </div>
     <div class="summary" id="summary"></div>
     <div id="inmsg"></div>
-    <p class="help" style="margin:10px 0 0"><a href="#" id="helpLink" style="color:var(--brand);font-weight:600">📘 Read the step-by-step tutorial</a> · Column names are flexible (Class/Semester/Grade/Batch · Subject/Paper/Course · Teacher/Faculty/Staff · Hours/Periods). For joint teaching write <b>Teacher A / Teacher B</b> — both will be kept free together.</p>
+    <p class="help" style="margin:10px 0 0"><a href="#" id="helpLink" style="color:var(--brand);font-weight:600">📘 Read the step-by-step tutorial</a> · Column names are flexible (Class/Semester/Batch · Subject/Paper/Course · Teacher/Faculty/Staff · Allotted hrs/Hours/Periods). For joint teaching write <b>Teacher A / Teacher B</b> — both will be kept free together.</p>
   </section>
 
   <!-- STEP 2 -->
@@ -325,21 +325,21 @@ table.master tbody.odd td.free{background:#fcfcfd}
       <details><summary><span>2</span>Prepare your data with the template</summary>
         <p>Fill one row for every paper taught in every class, on the first sheet <b>Timetable Data</b>.</p>
         <table class="ht"><tr><th>Column</th><th>What to enter</th><th>Example</th></tr>
-          <tr><td>Class</td><td>Programme, year/semester, division — same spelling in every row</td><td>I B.Com (Sem 1)</td></tr>
-          <tr><td>Subject</td><td>Paper / course name</td><td>Financial Accounting I</td></tr>
-          <tr><td>Teacher</td><td>Name or initials — same spelling everywhere</td><td>Dr. Anu Joseph</td></tr>
-          <tr><td>Hours per week</td><td>Periods this paper needs each week</td><td>5</td></tr></table>
-        <ul><li><b>Joint teaching / practicals:</b> write both teachers with a slash, e.g. <i>Dr. Anil / Dr. Vinod</i>.</li>
-          <li><b>Spelling matters:</b> <i>Dr Rose</i> and <i>Dr. Rose</i> count as two teachers.</li>
+          <tr><td>Class</td><td>Class / batch code — same spelling in every row</td><td>1K, 2K, 3K</td></tr>
+          <tr><td>Subject</td><td>Paper / course name</td><td>Corporate Accounting</td></tr>
+          <tr><td>Teacher</td><td>Initials or name — same spelling everywhere</td><td>SK</td></tr>
+          <tr><td>Allotted hrs</td><td>Periods this paper gets each week</td><td>5</td></tr></table>
+        <ul><li><b>One paper split between two teachers</b> (e.g. Business and Taxation Laws: SB 2 hrs, JJ 3 hrs): use two rows. <b>Both teaching together</b> (labs): write <i>JJ / ETJ</i> in one row.</li>
+          <li><b>Spelling matters:</b> <i>AJJ</i> and <i>A.J.J</i> count as two teachers.</li>
           <li>A class can have at most 25 hours a week (5 days × 5 periods); a teacher at most 4 periods a day.</li>
           <li>Put all departments that share teachers in one file, so shared teachers never clash.</li>
-          <li>The template's <b>Example (College)</b> sheet shows a filled sample.</li></ul>
+          <li>The template's <b>Example (College)</b> sheet shows a filled sample (1K–5K); tap <b>College example</b> in Step 1 to try it in the app.</li></ul>
       </details>
 
       <details><summary><span>3</span>Open the app and upload your file</summary>
         <ol><li>On your first visit, enter your name, college and email and tap <b>Continue</b> (asked once per device; tap your name at the top to change it).</li>
           <li>In <b>Step 1</b>, tap <b>Upload Excel file</b> and choose your filled template. On a computer you can drag the file onto the box.</li>
-          <li>Check the summary under the box, e.g. <i>5 classes · 7 teachers · 30 subjects · 114 hours / week</i>.</li></ol>
+          <li>Check the summary under the box, e.g. <i>5 classes · 7 teachers · 31 subjects · 113 hours / week</i>.</li></ol>
         <p>You can also copy rows from any Excel sheet and paste them into the box. Your data stays on your device for next time; <b>Clear</b> empties it.</p>
       </details>
 
@@ -694,27 +694,39 @@ Class 9B	Physics	Deepa	3
 Class 9B	Chemistry	Deepa	3
 Class 9B	Hindi	Lakshmi	3
 Class 9B	Physical Education	Thomas	2`,
-college: `Class	Subject	Teacher	Hours
-BA English I	British Poetry	Dr. Maria	5
-BA English I	Indian Writing in English	Dr. Kiran	4
-BA English I	Environmental Studies	Dr. Nisha	3
-BA English I	Second Language	Fr. George	4
-BSc Physics I	Mechanics	Dr. Anil	5
-BSc Physics I	Mathematics I	Dr. Rose	5
-BSc Physics I	Chemistry Complementary	Dr. Nisha	4
-BSc Physics I	Physics Practical	Dr. Anil / Dr. Vinod	4
-BCom I	Financial Accounting	Dr. Suresh	5
-BCom I	Business Economics	Dr. Kiran	4
-BCom I	Business Statistics	Dr. Rose	4
-BCom I	Second Language	Fr. George	4
-BSc Computer Science II	Data Structures	Dr. Vinod	5
-BSc Computer Science II	Discrete Mathematics	Dr. Rose	4
-BSc Computer Science II	Programming Lab	Dr. Vinod / Dr. Anil	4
-BSc Computer Science II	Communication Skills	Dr. Maria	3
-MA Economics I	Microeconomics	Dr. Kiran	5
-MA Economics I	Quantitative Methods	Dr. Suresh	4
-MA Economics I	Development Economics	Dr. Nisha	4`};
-const TEMPLATE = 'Class\tSubject\tTeacher\tHours per week\n';
+college: `Class	Subject	Teacher	Allotted hrs
+1K	Accounting Principles and Practice (MDC)	SRJ	4
+1K	Business Regulatory Framework	AT	5
+1K	Business Analytics and Predictive Techniques	ETJ	3
+1K	Business Analytics and Predictive Techniques – Lab	ETJ	2
+1K	Capital Markets and Investment Management	JJ	5
+2K	Trends and Innovations in Banking	AJJ	4
+2K	Corporate Accounting	SK	5
+2K	Business and Taxation Laws	SB	2
+2K	Quantitative Techniques for Business Decisions	SRJ	5
+2K	Business and Taxation Laws	JJ	3
+3K	Income Tax - II	AJJ	5
+3K	Working Capital Management	SK	1
+3K	Management Accounting and Performance Management	SB	4
+3K	Working Capital Management	SRJ	3
+3K	Cost Accounting Methods	AT	4
+3K	Auditing and Assurance	ETJ	2
+3K	Spreadsheet & AI Tools for Financial Data Analysis – Lab	JJ	5
+3K	Auditing and Assurance	JJ	1
+4K	Indian Ethos in Management	AJJ	2
+4K	Corporate Financial Reporting	SK	5
+4K	Business Environment and Corporate Strategy	SB	5
+4K	Management Optimization Techniques	SRJ	4
+4K	International Business	AT	2
+4K	Management Optimization Techniques	ETJ	1
+4K	International Business	ETJ	3
+4K	Indian Ethos in Management	JJ	3
+5K	Corporate Tax Planning	AJJ	5
+5K	Derivatives and Risk Management	SK	5
+5K	Advanced Cost and Management Accounting	SB	5
+5K	Personal Investment and Behavioural Finance	AT	5
+5K	Business Analytics - II – Lab	ETJ	5`};
+const TEMPLATE = 'Class\tSubject\tTeacher\tAllotted hrs\n';
 
 const cfg = {days:[0,1,2,3,4], periods:5, maxC:2, cap:2, dmax:99};
 let state = null, view = 'master', running = false;
@@ -761,7 +773,7 @@ function rowsFromGrid(grid){
   const t = v => String(v ?? '').trim();
   return grid.map(r => ({cls:t(r[col.cls]), subj:t(r[col.subj]), teacher:t(r[col.teacher]), hours: col.hours>=0 ? t(r[col.hours]) : '1'}));
 }
-function rowsToText(rows){return 'Class\tSubject\tTeacher\tHours\n'+rows.map(r=>[r.cls,r.subj,r.teacher,r.hours].join('\t')).join('\n');}
+function rowsToText(rows){return 'Class\tSubject\tTeacher\tAllotted hrs\n'+rows.map(r=>[r.cls,r.subj,r.teacher,r.hours].join('\t')).join('\n');}
 
 function updateSummary(){
   const rows = rowsFromGrid(gridFromText($('data').value)).filter(r=>r.cls&&r.subj&&r.teacher&&+r.hours>0);
