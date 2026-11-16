@@ -184,6 +184,13 @@ td.na{background:repeating-linear-gradient(45deg,#fef3f2,#fef3f2 5px,#fde8e6 5px
 .tplcard .arr{margin-left:auto;font-size:18px;color:#067647}
 .hero-btn{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);color:#fff;text-decoration:none}
 .hero-btn:hover{background:rgba(255,255,255,.24);border-color:rgba(255,255,255,.5)}
+table.master{min-width:760px;table-layout:fixed}
+table.master thead th:nth-child(1){width:92px}table.master thead th:nth-child(2){width:120px}
+table.master th.mday{background:#eef0ff;color:#3730a3;font-weight:700;text-align:center;vertical-align:middle;border-right:2px solid #c7cbf5}
+table.master th.mcls{background:#fcfcfd;font-size:12.5px;white-space:normal}
+table.master tbody{border-top:3px solid #c7cbf5}
+table.master tbody tr:first-child>*{border-top:3px solid #c7cbf5}
+table.master tbody.odd td.free{background:#fcfcfd}
 .credit{text-align:center;font-size:11.5px;color:var(--muted);margin:14px 0 0;letter-spacing:.01em}.credit b{font-weight:600;color:#475467}
 .hero .by{font-size:12px;opacity:.7;margin-top:14px}
 .foot{text-align:center;color:var(--soft);font-size:12px;margin-top:10px}
@@ -279,7 +286,7 @@ td.na{background:repeating-linear-gradient(45deg,#fef3f2,#fef3f2 5px,#fde8e6 5px
     <div class="card-h"><div class="step">3</div><div><h2>Your timetable</h2><p id="outSub"></p></div></div>
     <div id="checks"></div>
     <div class="toolbar">
-      <div class="seg" id="viewSeg"><button data-v="class" class="on">Classes</button><button data-v="teacher">Teachers</button><button data-v="load">Workload</button></div>
+      <div class="seg" id="viewSeg"><button data-v="master" class="on">All classes</button><button data-v="class">Classes</button><button data-v="teacher">Teachers</button><button data-v="load">Workload</button></div>
       <div class="row">
         <select id="pick"></select>
         <button class="btn hide" id="undo" title="Undo last move">↶ Undo</button>
@@ -357,21 +364,21 @@ td.na{background:repeating-linear-gradient(45deg,#fef3f2,#fef3f2 5px,#fde8e6 5px
 
       <details><summary><span>6</span>Generate and read the timetable</summary>
         <p>Tap <b>Generate timetable</b> — usually ready in 1–3 seconds. Green ticks confirm every rule.</p>
-        <ul><li><b>Classes:</b> each class's week, subject with teacher; <i>Free</i> for empty periods.</li>
+        <ul><li><b>All classes:</b> the master timetable — every class, Monday to Friday, in one table (also the first sheet of the Excel file).</li><li><b>Classes:</b> each class's week, subject with teacher; <i>Free</i> for empty periods.</li>
           <li><b>Teachers:</b> each teacher's week; <i>Not available</i> in red.</li>
           <li><b>Workload:</b> hours per day (with limit, e.g. 3 /4), total, morning, afternoon, longest run.</li></ul>
         <p>Tap <b>↻ Another version</b> for a different valid arrangement.</p>
       </details>
 
       <details><summary><span>7</span>Move periods by hand</summary>
-        <ol><li>In <b>Classes</b>, tap a period — it gets a blue outline.</li>
+        <ol><li>In <b>All classes</b> or <b>Classes</b>, tap a period — it gets a blue outline.</li>
           <li><b>Green</b> spots are safe; faded spots would break a rule (tap one to see why).</li>
           <li>Tap a green spot to swap. <b>↶ Undo</b> reverses the last move.</li></ol>
         <p>On a computer you can drag and drop. Hand edits go into the Excel download; generating again replaces them.</p>
       </details>
 
       <details><summary><span>8</span>Download the Excel timetable</summary>
-        <p><b>Download Excel</b> gives one colour-coded workbook: <b>All Classes</b>, <b>All Teachers</b>, <b>Workload</b>, and one sheet per class — each with your college name, title and date.</p>
+        <p><b>Download Excel</b> gives one colour-coded workbook: <b>Master Timetable</b> (all classes in one table), <b>All Classes</b>, <b>All Teachers</b>, <b>Workload</b>, and one sheet per class — each with your college name, title and date.</p>
         <p><b>To print:</b> in Excel choose Page Layout → Landscape → Fit to 1 page wide. <b>Copy</b> copies the screen view to paste into Excel or Google Sheets.</p>
       </details>
 
@@ -710,7 +717,7 @@ MA Economics I	Development Economics	Dr. Nisha	4`};
 const TEMPLATE = 'Class\tSubject\tTeacher\tHours per week\n';
 
 const cfg = {days:[0,1,2,3,4], periods:5, maxC:2, cap:2, dmax:99};
-let state = null, view = 'class', running = false;
+let state = null, view = 'master', running = false;
 
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),1900);}
 async function copyText(t,ok){try{await navigator.clipboard.writeText(t);toast(ok);}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast(ok);}catch(_){toast('Copy is blocked here');}ta.remove();}}
@@ -966,21 +973,43 @@ function grid(name, meta, cellFn){
   }
   return h + '</tbody></table></div></div>';
 }
+function moveCell(c, s, okSet){
+  const {pb, cg} = state, gi = cg[c][s];
+  let cls = '';
+  if (pick && pick.c===c) cls = s===pick.s ? ' selC' : okSet.has(s) ? ' okT' : ' noT';
+  const da = `data-c="${c}" data-s="${s}" draggable="true"`;
+  if (gi<0) return `<td class="free${cls}" ${da}>Free</td>`;
+  const g = pb.groups[gi];
+  return `<td class="cell${cls}" ${da}><div class="slot" style="${slotStyle(g.subj)}"><div class="s">${esc(g.subj)}</div><div class="t">${esc(g.ts.map(t=>pb.teachers[t]).join(' / '))}</div></div></td>`;
+}
+function okTargets(){ if (!pick) return null; const o = new Set(); for (let s=0;s<S;s++) if (s!==pick.s && !state.board.check(pick.c, pick.s, s)) o.add(s); return o; }
+function masterTable(){
+  const {pb, times, brk} = state, okSet = okTargets();
+  let h = '<div class="scroll"><table class="master"><thead><tr><th style="text-align:left">Day</th><th style="text-align:left">Class</th>';
+  for (let p=0;p<P;p++){ h += `<th>Period ${p+1}${times?`<small>${times[p]}</small>`:''}</th>`; if (brk===p+1) h += '<th class="brk"><span>BREAK</span></th>'; }
+  h += '</tr></thead>';
+  for (let d=0; d<D; d++){
+    h += `<tbody class="${d%2?'odd':''}">`;
+    pb.classes.forEach((cn, c) => {
+      h += '<tr>' + (c===0 ? `<th class="mday" rowspan="${pb.classes.length}">${DAYS[d]}</th>` : '') + `<th class="mcls">${esc(cn)}</th>`;
+      for (let p=0;p<P;p++){ h += moveCell(c, d*P+p, okSet); if (brk===p+1) h += '<td class="brk"></td>'; }
+      h += '</tr>';
+    });
+    h += '</tbody>';
+  }
+  return h + '</table></div>';
+}
 function renderView(){
   if(!state) return;
   const {pb, cg, v} = state, sel = +$('pick').value; let h = docTitle();
-  if(view === 'class'){
+  if(view === 'master'){
+    h += `<p class="tip">All classes, Monday to Friday, in one table. ✋ Tap a period, then a <span style="color:#067647;font-weight:600">green</span> spot in the same row band to move it (or drag on a computer).</p>`;
+    h += masterTable();
+  } else if(view === 'class'){
     h += `<p class="tip">✋ <b>To move a period:</b> tap it, then tap where it should go — <span style="color:#067647;font-weight:600">green</span> spots keep every rule. On a computer you can also drag and drop.</p>`;
-    let okSet = null;
-    if (pick && state.solved !== undefined) { okSet = new Set(); for (let s=0;s<S;s++) if (s!==pick.s && !state.board.check(pick.c, pick.s, s)) okSet.add(s); }
+    const okSet = okTargets();
     pb.classes.forEach((cn, c) => { if(sel>=0 && sel!==c) return;
-      h += grid(cn, `${cg[c].filter(x=>x>=0).length} hrs / week`, s => {
-        const gi=cg[c][s];
-        let cls = '';
-        if (pick && pick.c===c) cls = s===pick.s ? ' selC' : okSet.has(s) ? ' okT' : ' noT';
-        const da = `data-c="${c}" data-s="${s}" draggable="true"`;
-        if(gi<0) return `<td class="free${cls}" ${da}>Free</td>`;
-        const g=pb.groups[gi]; return `<td class="cell${cls}" ${da}><div class="slot" style="${slotStyle(g.subj)}"><div class="s">${esc(g.subj)}</div><div class="t">${esc(g.ts.map(t=>pb.teachers[t]).join(' / '))}</div></div></td>`; });
+      h += grid(cn, `${cg[c].filter(x=>x>=0).length} hrs / week`, s => moveCell(c, s, okSet));
     });
   } else if(view === 'teacher'){
     h += `<p class="tip">To move periods, switch to <b>Classes</b>. Shaded red = teacher not available.</p>`;
@@ -1010,7 +1039,7 @@ function doMove(c, s1, s2){
   render(); toast('Moved ✓'); return true;
 }
 $('view').addEventListener('click', e => {
-  if (view !== 'class' || !state) return;
+  if ((view !== 'class' && view !== 'master') || !state) return;
   const td = e.target.closest('td[data-s]'); if (!td) return;
   const c = +td.dataset.c, s = +td.dataset.s;
   if (!pick || pick.c !== c) { pick = {c, s}; renderView(); return; }
@@ -1018,7 +1047,7 @@ $('view').addEventListener('click', e => {
   doMove(c, pick.s, s);
 });
 $('view').addEventListener('dragstart', e => {
-  const td = e.target.closest('td[data-s]'); if (!td || view !== 'class') return;
+  const td = e.target.closest('td[data-s]'); if (!td || (view !== 'class' && view !== 'master')) return;
   pick = {c:+td.dataset.c, s:+td.dataset.s};
   try { e.dataTransfer.setData('text/plain', td.dataset.c+','+td.dataset.s); e.dataTransfer.effectAllowed = 'move'; } catch (_) {}
   setTimeout(renderView, 0);
@@ -1036,7 +1065,9 @@ $('copy').onclick = () => {
   const hdrCells=['Day']; for(let p=0;p<P;p++){ hdrCells.push(`Period ${p+1}${times?` (${times[p]})`:''}`); if(brk===p+1) hdrCells.push('Break'); }
   const hdr = hdrCells.join('\t');
   const block = (name, fn) => { L.push(name, hdr); for(let d=0;d<D;d++){ const r=[DAYS[d]]; for(let p=0;p<P;p++){ r.push(fn(d*P+p)); if(brk===p+1) r.push(''); } L.push(r.join('\t')); } L.push(''); };
-  if(view === 'class') pb.classes.forEach((cn,c)=>{ if(sel>=0&&sel!==c) return; block(cn, s=>{ const gi=cg[c][s]; return gi<0?'Free':`${pb.groups[gi].subj} (${pb.groups[gi].ts.map(t=>pb.teachers[t]).join(' / ')})`; }); });
+  if(view === 'master'){ const hd=['Day','Class']; for(let p=0;p<P;p++){ hd.push(`Period ${p+1}${times?` (${times[p]})`:''}`); if(brk===p+1) hd.push('Break'); } L.push(hd.join('\t'));
+    for(let d=0;d<D;d++) pb.classes.forEach((cn,c)=>{ const r=[c===0?DAYS[d]:'', cn]; for(let p=0;p<P;p++){ const gi=cg[c][d*P+p]; r.push(gi<0?'Free':`${pb.groups[gi].subj} (${pb.groups[gi].ts.map(t=>pb.teachers[t]).join(' / ')})`); if(brk===p+1) r.push(''); } L.push(r.join('\t')); }); }
+  else if(view === 'class') pb.classes.forEach((cn,c)=>{ if(sel>=0&&sel!==c) return; block(cn, s=>{ const gi=cg[c][s]; return gi<0?'Free':`${pb.groups[gi].subj} (${pb.groups[gi].ts.map(t=>pb.teachers[t]).join(' / ')})`; }); });
   else if(view === 'teacher') pb.teachers.forEach((tn,t)=>{ if(sel>=0&&sel!==t) return; block(tn, s=>{ const c=v.tb[t][s]; return c===null?'-':`${pb.classes[c]} - ${pb.groups[cg[c][s]].subj}`; }); });
   else { L.push(['Teacher',...DAYS,'Total'].join('\t')); pb.teachers.forEach((tn,t)=>{ const per=[]; for(let d=0;d<D;d++){let n=0;for(let p=0;p<P;p++) if(v.tb[t][d*P+p]!==null) n++; per.push(n);} L.push([tn,...per,per.reduce((x,y)=>x+y,0)].join('\t')); }); }
   copyText(L.join('\n'), 'Copied — paste into Excel or Google Sheets');
@@ -1199,6 +1230,24 @@ const teacherCell = t => s => { const c = state.v.tb[t][s]; if (c===null) return
 function buildWorkbook(){
   const {pb, cg, v} = state, wb = XLSX.utils.book_new(), cols = ttCols(), ncol = cols.length, used = new Set();
   const sname = n => { let b = String(n).replace(/[\\\/\?\*\[\]:]/g,' ').trim().slice(0,28) || 'Sheet', s=b, i=2; while(used.has(s.toLowerCase())) s = `${b} (${i++})`; used.add(s.toLowerCase()); return s; };
+  // master: all classes, Mon–Fri, one table
+  { const {times, brk} = state, mcols = [12, 20]; for (let p=0;p<P;p++){ mcols.push(22); if (brk===p+1) mcols.push(5); }
+    const m = new XSheet(); docHeader(m, mcols.length);
+    m.add(['MASTER TIMETABLE — ALL CLASSES'], ST.sec, {merge:mcols.length, h:22});
+    const hd = ['Day','Class']; for (let p=0;p<P;p++){ hd.push(`Period ${p+1}` + (times ? `\n${times[p]}` : '')); if (brk===p+1) hd.push(''); }
+    m.add(hd, c => (brk && c===brk+2) ? ST.brk : ST.head, {h: times ? 30 : 20});
+    const bc = brk ? brk+2 : -1, first = m.rows.length;
+    for (let d=0; d<D; d++){
+      const start = m.rows.length;
+      pb.classes.forEach((cn,c) => {
+        const vals = [c===0 ? DAYS[d] : '', cn], sts = [ST.day, {...ST.day, font:{bold:true, sz:10, color:{rgb:'3730A3'}}}];
+        for (let p=0;p<P;p++){ const [v2, s2] = classCell(c)(d*P+p); vals.push(v2); sts.push(s2); if (brk===p+1){ vals.push(''); sts.push(ST.brk); } }
+        m.add(vals, k => sts[k], {h:34});
+      });
+      if (pb.classes.length > 1) m.merges.push({s:{r:start, c:0}, e:{r:start+pb.classes.length-1, c:0}});
+    }
+    if (bc >= 0) { m.merges.push({s:{r:first, c:bc}, e:{r:m.rows.length-1, c:bc}}); m.rows[first][bc] = 'BREAK'; }
+    docFooter(m, mcols.length); XLSX.utils.book_append_sheet(wb, m.build(mcols), sname('Master Timetable')); }
   let sh = new XSheet(); docHeader(sh, ncol);
   pb.classes.forEach((cn,c)=> ttBlock(sh, cn, `${cg[c].filter(x=>x>=0).length} hrs/week`, classCell(c)));
   docFooter(sh, ncol); XLSX.utils.book_append_sheet(wb, sh.build(cols), sname('All Classes'));
