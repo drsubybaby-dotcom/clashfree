@@ -752,7 +752,7 @@ function rowsFromGrid(grid){
   if(hi >= 0 && hi < 6){
     const h = grid[hi].map(c => String(c ?? '').toLowerCase());
     const find = re => h.findIndex(c => re.test(c));
-    const c3=find(TEACH_RE), c2=find(/subject|paper|course title|course name|module|topic/), c4=find(/hour|period|credit|load|per week|no\.? of|count/);
+    const c3=find(TEACH_RE), c2=find(/subject|paper|course title|course name|module|topic/), c4=find(/hour|hrs?\b|period|credit|load|allot|per week|weekly|no\.? of|count/);
     let c1=find(/class|sem|batch|grade|std|standard|programme|program|division|section|year|group|course$/);
     if(c1===c2) c1=-1;
     col = {cls:c1>=0?c1:0, subj:c2>=0?c2:1, teacher:c3, hours:c4};
@@ -1266,8 +1266,26 @@ function buildWorkbook(){
   wb.Props = {Title: 'Timetable', Author: reg ? reg.name : APP, Company: reg ? reg.college : ''};
   return wb;
 }
+// ---------- print setup: A4 landscape, fit to 1 page wide ----------
+function fitToPage(arr){
+  try {
+    const cfb = XLSX.CFB.read(new Uint8Array(arr), {type:'array'});
+    const enc = new TextEncoder(), dec = new TextDecoder();
+    cfb.FullPaths.forEach((p, i) => {
+      if (!/xl\/worksheets\/sheet\d+\.xml$/.test(p)) return;
+      const e = cfb.FileIndex[i]; let x = dec.decode(e.content);
+      if (x.indexOf('<pageSetup') >= 0) return;
+      x = x.replace(/(<worksheet[^>]*>)/, '$1<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>');
+      x = x.replace(/<pageMargins[^>]*\/>/, '');
+      const ps = '<printOptions horizontalCentered="1"/><pageMargins left="0.3" right="0.3" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>';
+      x = x.indexOf('<ignoredErrors') >= 0 ? x.replace('<ignoredErrors', ps + '<ignoredErrors') : x.replace('</worksheet>', ps + '</worksheet>');
+      e.content = enc.encode(x); e.size = e.content.length;
+    });
+    return XLSX.CFB.write(cfb, {fileType:'zip', type:'array'});
+  } catch (err) { console.warn('print setup skipped', err); return arr; }
+}
 async function saveFile(wb, filename){
-  const out = XLSX.write(wb, {bookType:'xlsx', type:'array', cellStyles:true, bookSST:true});
+  const out = fitToPage(XLSX.write(wb, {bookType:'xlsx', type:'array', cellStyles:true, bookSST:true}));
   const blob = new Blob([out], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   if (window.claude && typeof claude.use === 'function'){
     const dl = await claude.use('downloads').catch(()=>null);
