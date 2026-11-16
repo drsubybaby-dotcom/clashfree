@@ -144,7 +144,9 @@ td.brk span,th.brk span{writing-mode:vertical-rl;transform:rotate(180deg)}
 .akp-sm{width:22px;height:22px;border-radius:50%;vertical-align:middle;margin-right:6px;background:#fff;object-fit:contain;box-shadow:0 0 0 1px var(--line)}
 .mlogos{display:flex;justify-content:center;align-items:center;gap:10px}
 .mlogos img{width:52px;height:52px;border-radius:50%;object-fit:contain;background:#fff;box-shadow:0 0 0 1px var(--line)}
-.avgrid{min-width:300px;table-layout:fixed}
+.avgrid{min-width:340px;table-layout:fixed}
+.avgrid select{width:100%;padding:6px 4px;font-size:12.5px;border-radius:8px}
+.avgrid select.set{border-color:var(--brand);color:var(--brand);font-weight:600;background:var(--brand-l)}
 .avgrid th{font-size:12px}
 .avgrid td{padding:4px}
 .avgrid button{width:100%;min-height:36px;border:1px solid var(--line);border-radius:8px;background:#fff;font:inherit;font-size:12px;cursor:pointer;color:#475467}
@@ -214,6 +216,7 @@ td.na{background:repeating-linear-gradient(45deg,#fef3f2,#fef3f2 5px,#fde8e6 5px
       <div class="field"><span class="lbl">Working days</span><div class="days"><span class="day on">Mon</span><span class="day on">Tue</span><span class="day on">Wed</span><span class="day on">Thu</span><span class="day on">Fri</span></div><span class="help">Saturday and Sunday are holidays</span></div>
       <div class="field"><span class="lbl">Periods per day</span><div class="stepper"><button id="pMinus" aria-label="fewer">−</button><output id="pOut">5</output><button id="pPlus" aria-label="more">+</button></div></div>
       <div class="field"><span class="lbl">Max continuous hours for a teacher</span><div class="seg" id="maxc"><button data-v="1">1</button><button data-v="2" class="on">2</button><button data-v="3">3</button><button data-v="4">4</button></div></div>
+      <div class="field"><span class="lbl">Max hours per teacher per day</span><div class="seg" id="dmax"><button data-v="99" class="on">Any</button><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button><button data-v="5">5</button></div><span class="help">Change it for any teacher or day under “Teacher availability &amp; daily hours” below</span></div>
       <div class="field"><span class="lbl">Same subject per day (per class)</span><div class="seg" id="cap"><button data-v="1">1</button><button data-v="2" class="on">Up to 2</button><button data-v="3">Up to 3</button><button data-v="99">Any</button></div></div>
     </div>
     <div class="sep"></div>
@@ -221,13 +224,13 @@ td.na{background:repeating-linear-gradient(45deg,#fef3f2,#fef3f2 5px,#fde8e6 5px
     <p class="help" id="mornInfo" style="margin:6px 0 0 48px"></p>
     <div class="sep"></div>
     <div class="row between">
-      <div><span class="lbl">Teacher not available</span><div class="help">Optional: periods a teacher cannot take (meetings, other duties, part-time)</div></div>
+      <div><span class="lbl">Teacher availability &amp; daily hours</span><div class="help">Optional: periods a teacher cannot take, and how many hours they can take each day (e.g. Mon 4, Tue 3)</div></div>
       <button class="btn" id="avBtn">Mark periods</button>
     </div>
     <div id="avPanel" class="hide" style="margin-top:12px">
       <div class="row" style="margin-bottom:10px"><select id="avTeacher" style="width:auto;min-width:200px"></select><button class="btn ghost" id="avClear">Clear this teacher</button><button class="btn ghost" id="avDone">Done</button></div>
       <div class="scroll"><table class="avgrid" id="avGrid"></table></div>
-      <p class="help" style="margin:8px 0 0">Tap a period to mark it <b style="color:#b42318">✕ Not available</b>. Tap a day name to mark the whole day.</p>
+      <p class="help" style="margin:8px 0 0">Tap a period to mark it <b style="color:#b42318">✕ Not available</b>. Tap a day name to block the whole day. Use <b>Max hours</b> to set how many hours this teacher can take that day.</p>
     </div>
     <div class="summary" id="avSummary"></div>
     <div class="sep"></div>
@@ -315,14 +318,19 @@ function buildProblem(rows) {
   return { classes, teachers, groups, classLoad, teacherLoad, errors, warnings };
 }
 
-function precheck(pb, maxConsec, unav) {
+function precheck(pb, maxConsec, unav, dayCap) {
   const errs = [];
   // max periods a teacher can take in one day with no run longer than maxConsec
   let perDay = 0; for (let p = 0; p < P; p++) if ((p % (maxConsec + 1)) < maxConsec) perDay++;
   pb.classLoad.forEach((l, c) => { if (l > S) errs.push(`${pb.classes[c]} needs ${l} hours but only ${S} periods exist in a week.`); });
-  if (unav) pb.teacherLoad.forEach((l, t) => {
-    let cap = 0; for (let d = 0; d < D; d++) { let run = 0; for (let p = 0; p < P; p++) { if (unav[t][d * P + p]) { run = 0; continue; } if (run < maxConsec) { cap++; run++; } else run = 0; } }
-    if (cap < perDay * D && l > cap) errs.push(`${pb.teachers[t]} has ${l} hours but, with the periods marked not available, can take at most ${cap}.`);
+  if (unav || dayCap) pb.teacherLoad.forEach((l, t) => {
+    let cap = 0;
+    for (let d = 0; d < D; d++) {
+      let run = 0, c = 0;
+      for (let p = 0; p < P; p++) { if (unav && unav[t][d * P + p]) { run = 0; continue; } if (run < maxConsec) { c++; run++; } else run = 0; }
+      cap += Math.min(c, dayCap ? dayCap[t][d] : 99);
+    }
+    if (cap < perDay * D && l > cap) errs.push(`${pb.teachers[t]} has ${l} hours but, with the unavailable periods and daily limits you set, can take at most ${cap} a week.`);
   });
   pb.teacherLoad.forEach((l, t) => { if (l > perDay * D) errs.push(`${pb.teachers[t]} has ${l} hours; with at most ${maxConsec} continuous hours the maximum possible is ${perDay * D} per week.`); });
   return errs;
@@ -334,6 +342,7 @@ class Solver {
   constructor(pb, opts) {
     this.pb = pb; this.maxC = opts.maxConsec; this.cap = opts.subjCap;
     this.unav = opts.unav || pb.teachers.map(() => new Array(S).fill(false));
+    this.dayCap = opts.dayCap || pb.teachers.map(() => new Array(D).fill(99));
     this.morn = opts.morning || Array.from({length: P}, (_, p) => p < Math.ceil(P / 2));
     this.frac = this.morn.filter(Boolean).length / P;
     this.best = null; this.bestPlaced = -1; this.done = false; this.solution = null; this.restarts = 0;
@@ -346,6 +355,7 @@ class Solver {
     this.sd = {}; pb.groups.forEach(g => { this.sd[g.sk] = new Array(D).fill(0); });
     this.rem = pb.groups.map(g => g.count);
     this.tm = pb.teachers.map(() => 0); this.tn = pb.teachers.map(() => 0);
+    this.need = pb.teachers.map(() => 0); pb.groups.forEach(g => g.ts.forEach(t => this.need[t] += g.count));
     this.placed = 0; this.nodes = 0; this.curCap = cap;
     this.jitter = pb.groups.map(() => Math.random());
   }
@@ -357,6 +367,7 @@ class Solver {
     for (const t of g.ts) {
       const row = this.tb[t];
       if (row[s] || this.unav[t][s]) return false;
+      if (this.dayCap[t][d] < P) { let n = 0; for (let q = 0; q < P; q++) n += row[d * P + q]; if (n >= this.dayCap[t][d]) return false; }
       let run = 1;
       for (let q = p - 1; q >= 0 && row[d * P + q]; q--) run++;
       for (let q = p + 1; q < P && row[d * P + q]; q++) run++;
@@ -368,12 +379,34 @@ class Solver {
     const g = this.pb.groups[gi];
     this.cg[g.c][s] = v ? gi : -1;
     const mo = this.morn[s % P] ? 1 : 0;
-    for (const t of g.ts) { this.tb[t][s] += v ? 1 : -1; this.tn[t] += v ? 1 : -1; this.tm[t] += v ? mo : -mo; }
+    for (const t of g.ts) { this.tb[t][s] += v ? 1 : -1; this.tn[t] += v ? 1 : -1; this.tm[t] += v ? mo : -mo; this.need[t] += v ? -1 : 1; }
     this.sd[g.sk][(s / P) | 0] += v ? 1 : -1;
     this.rem[gi] += v ? -1 : 1; this.placed += v ? 1 : -1;
   }
+  // most extra periods teacher t can still take (runs, unavailability, daily limits)
+  capLeft(t) {
+    const row = this.tb[t], un = this.unav[t], M = this.maxC; let tot = 0;
+    for (let d = 0; d < D; d++) {
+      // dp over periods: best[k] = max taken so far ending with a run of k
+      let best = new Array(M + 1).fill(-1e9); best[0] = 0; let fixed = 0;
+      for (let p = 0; p < P; p++) {
+        const s = d * P + p, occ = row[s] > 0, nb = new Array(M + 1).fill(-1e9);
+        if (occ) fixed++;
+        for (let k = 0; k <= M; k++) {
+          if (best[k] < -1e8) continue;
+          if (!occ && best[k] > nb[0]) nb[0] = best[k];                       // leave empty
+          if ((occ || !un[s]) && k < M) { const v = best[k] + (occ ? 0 : 1); if (v > nb[k + 1]) nb[k + 1] = v; } // take
+        }
+        best = nb;
+      }
+      const add = Math.max(...best);
+      tot += Math.max(0, Math.min(add, this.dayCap[t][d] - fixed));
+    }
+    return tot;
+  }
   dfs() {
     if (this.placed === this.total) return true;
+    for (let t = 0; t < this.need.length; t++) if (this.need[t] > 0 && this.need[t] > this.capLeft(t)) return false;
     if (++this.nodes > this.limit) return false;
     if (this.placed > this.bestPlaced) { this.bestPlaced = this.placed; this.best = this.cg.map(r => r.slice()); }
     let bg = -1, bo = null;
@@ -415,9 +448,9 @@ class Solver {
   }
 }
 
-function verify(pb, cg, maxC, unav) {
+function verify(pb, cg, maxC, unav, dayCap) {
   const tb = pb.teachers.map(() => new Array(S).fill(null));
-  const clashes = [], longRuns = [], unavHits = [];
+  const clashes = [], longRuns = [], unavHits = [], capHits = [];
   cg.forEach((row, c) => row.forEach((gi, s) => {
     if (gi < 0) return;
     pb.groups[gi].ts.forEach(t => {
@@ -427,9 +460,13 @@ function verify(pb, cg, maxC, unav) {
     });
   }));
   tb.forEach((row, t) => {
-    for (let d = 0; d < D; d++) { let run = 0; for (let p = 0; p < P; p++) { run = row[d * P + p] !== null ? run + 1 : 0; if (run > maxC) { longRuns.push(`${pb.teachers[t]} on ${DAYS[d]}`); break; } } }
+    for (let d = 0; d < D; d++) {
+      let run = 0, n = 0;
+      for (let p = 0; p < P; p++) { if (row[d * P + p] !== null) n++; run = row[d * P + p] !== null ? run + 1 : 0; if (run > maxC && longRuns[longRuns.length - 1] !== `${pb.teachers[t]} on ${DAYS[d]}`) longRuns.push(`${pb.teachers[t]} on ${DAYS[d]}`); }
+      if (dayCap && n > dayCap[t][d]) capHits.push(`${pb.teachers[t]} on ${DAYS[d]}`);
+    }
   });
-  return { clashes, longRuns, unavHits, tb };
+  return { clashes, longRuns, unavHits, capHits, tb };
 }
 
 // ---------- Board: checked swaps (manual moves + balancing) ----------
@@ -437,6 +474,7 @@ class Board {
   constructor(pb, cg, opts) {
     this.pb = pb; this.cg = cg; this.maxC = opts.maxConsec; this.cap = opts.cap;
     this.unav = opts.unav; this.morn = opts.morning;
+    this.dayCap = opts.dayCap || pb.teachers.map(() => new Array(D).fill(99));
     this.tb = pb.teachers.map(() => new Array(S).fill(0));
     cg.forEach(row => row.forEach((gi, s) => { if (gi >= 0) pb.groups[gi].ts.forEach(t => this.tb[t][s]++); }));
   }
@@ -466,7 +504,11 @@ class Board {
     if (r) return r;
     this.move(c, s1, s2);
     const days = new Set([(s1 / P) | 0, (s2 / P) | 0]);
-    outer: for (const t of new Set([...this.ts(a), ...this.ts(b)])) for (const d of days) if (!this.runOk(t, d)) { r = `${T[t]} would teach more than ${this.maxC} hours continuously`; break outer; }
+    outer: for (const t of new Set([...this.ts(a), ...this.ts(b)])) for (const d of days) {
+      if (!this.runOk(t, d)) { r = `${T[t]} would teach more than ${this.maxC} hours continuously`; break outer; }
+      let n = 0; for (let p = 0; p < P; p++) if (this.tb[t][d * P + p]) n++;
+      if (n > this.dayCap[t][d]) { r = `${T[t]} can take only ${this.dayCap[t][d]} hour${this.dayCap[t][d] === 1 ? '' : 's'} on ${DAYS[d]}`; break outer; }
+    }
     if (!r && this.cap < 99) outer2: for (const d of days) {
       const cnt = {};
       for (let p = 0; p < P; p++) { const gi = this.cg[c][d * P + p]; if (gi >= 0) { const k = pb.groups[gi].subj; cnt[k] = (cnt[k] || 0) + 1; if (cnt[k] > this.cap) { r = `${k} would come more than ${this.cap} times on ${DAYS[d]}`; break outer2; } } }
@@ -549,7 +591,7 @@ MA Economics I	Quantitative Methods	Dr. Suresh	4
 MA Economics I	Development Economics	Dr. Nisha	4`};
 const TEMPLATE = 'Class\tSubject\tTeacher\tHours per week\n';
 
-const cfg = {days:[0,1,2,3,4], periods:5, maxC:2, cap:2};
+const cfg = {days:[0,1,2,3,4], periods:5, maxC:2, cap:2, dmax:99};
 let state = null, view = 'class', running = false;
 
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),1900);}
@@ -566,7 +608,7 @@ $('pMinus').onclick = () => { if(cfg.periods>2){cfg.periods--; drawPeriods();} }
 $('pPlus').onclick = () => { if(cfg.periods<10){cfg.periods++; drawPeriods();} };
 function seg(id, key){ $(id).onclick = e => { const b=e.target.closest('button'); if(!b) return; $(id).querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); cfg[key]=+b.dataset.v;
   if(key==='maxC') $('chipConsec').textContent = `✓ No teacher teaches more than ${cfg.maxC} hour${cfg.maxC>1?'s':''} continuously`; }; }
-seg('maxc','maxC'); seg('cap','cap');
+seg('maxc','maxC'); seg('cap','cap'); seg('dmax','dmax');
 $('useTime').onchange = () => $('timing').classList.toggle('hide', !$('useTime').checked);
 drawPeriods();
 
@@ -639,20 +681,27 @@ $('clear').onclick = () => { $('data').value=''; $('inmsg').innerHTML=''; $('sum
 
 // ---------- teacher availability ----------
 let unavMap = {}; try { unavMap = JSON.parse(store.get('unav') || '{}') || {}; } catch (e) {}
-function saveUnav(){ store.set('unav', JSON.stringify(unavMap)); }
+let capMap = {}; try { capMap = JSON.parse(store.get('caps') || '{}') || {}; } catch (e) {}
+function saveUnav(){ store.set('unav', JSON.stringify(unavMap)); store.set('caps', JSON.stringify(capMap)); }
 function currentTeachers(){
   const rows = rowsFromGrid(gridFromText($('data').value)).filter(r=>r.teacher);
   return [...new Set(rows.flatMap(r=>splitTeachers(r.teacher)))];
 }
 function drawAvSummary(){
   const keys = Object.keys(unavMap).filter(k => (unavMap[k]||[]).some(x => +x.split('-')[1] < cfg.periods));
-  $('avSummary').innerHTML = keys.map(k => { const n = unavMap[k].filter(x => +x.split('-')[1] < cfg.periods).length; return `<span class="chip">✕ ${esc(k)}: ${n} period${n>1?'s':''}</span>`; }).join('');
+  const a = keys.map(k => { const n = unavMap[k].filter(x => +x.split('-')[1] < cfg.periods).length; return `<span class="chip">✕ ${esc(k)}: ${n} period${n>1?'s':''} off</span>`; });
+  const b = Object.keys(capMap).filter(k => (capMap[k]||[]).some(v => v !== null && v !== undefined)).map(k => `<span class="chip" style="background:var(--brand-l);color:var(--brand);border-color:#c7cbf5">⏱ ${esc(k)}: ${capMap[k].map((v,d)=> v===null||v===undefined ? null : ALL_DAYS[d].slice(0,3)+' '+v).filter(Boolean).join(' · ')}</span>`);
+  $('avSummary').innerHTML = a.concat(b).join('');
 }
 function drawAvGrid(){
   const t = $('avTeacher').value; if (!t) { $('avGrid').innerHTML = '<tr><td class="help">Add your subjects and teachers in step 1 first.</td></tr>'; return; }
   const set = new Set(unavMap[t] || []);
-  let h = '<thead><tr><th style="width:90px"></th>' + Array.from({length:cfg.periods},(_,p)=>`<th>P${p+1}</th>`).join('') + '</tr></thead><tbody>';
-  ALL_DAYS.slice(0,5).forEach((d,di)=>{ h += `<tr><th class="dayb" data-d="${di}">${d.slice(0,3)}</th>` + Array.from({length:cfg.periods},(_,p)=>{ const x=set.has(di+'-'+p); return `<td><button data-k="${di}-${p}" class="${x?'x':''}">${x?'✕':''}</button></td>`; }).join('') + '</tr>'; });
+  const caps = capMap[t] || [];
+  const dflt = cfg.dmax < 99 ? `Default (${cfg.dmax})` : 'Any';
+  let h = '<thead><tr><th style="width:56px"></th>' + Array.from({length:cfg.periods},(_,p)=>`<th>P${p+1}</th>`).join('') + '<th style="width:96px">Max hours</th></tr></thead><tbody>';
+  ALL_DAYS.slice(0,5).forEach((d,di)=>{ const cv = caps[di];
+    h += `<tr><th class="dayb" data-d="${di}">${d.slice(0,3)}</th>` + Array.from({length:cfg.periods},(_,p)=>{ const x=set.has(di+'-'+p); return `<td><button data-k="${di}-${p}" class="${x?'x':''}">${x?'✕':''}</button></td>`; }).join('')
+      + `<td><select data-cap="${di}" class="${cv!=null?'set':''}"><option value="">${dflt}</option>${Array.from({length:cfg.periods+1},(_,n)=>`<option value="${n}" ${cv===n?'selected':''}>${n===0?'0 (day off)':n}</option>`).join('')}</select></td></tr>`; });
   $('avGrid').innerHTML = h + '</tbody>';
 }
 $('avBtn').onclick = () => {
@@ -663,7 +712,14 @@ $('avBtn').onclick = () => {
 };
 $('avDone').onclick = () => $('avPanel').classList.add('hide');
 $('avTeacher').onchange = drawAvGrid;
-$('avClear').onclick = () => { delete unavMap[$('avTeacher').value]; saveUnav(); drawAvGrid(); drawAvSummary(); };
+$('avClear').onclick = () => { delete unavMap[$('avTeacher').value]; delete capMap[$('avTeacher').value]; saveUnav(); drawAvGrid(); drawAvSummary(); };
+$('avGrid').addEventListener('change', e => {
+  const sl = e.target.closest('select[data-cap]'); const t = $('avTeacher').value; if (!sl || !t) return;
+  const arr = (capMap[t] || [null,null,null,null,null]).slice(); arr[+sl.dataset.cap] = sl.value === '' ? null : +sl.value;
+  if (arr.some(v => v !== null && v !== undefined)) capMap[t] = arr; else delete capMap[t];
+  saveUnav(); drawAvGrid(); drawAvSummary();
+});
+$('dmax').addEventListener('click', () => setTimeout(() => { if(!$('avPanel').classList.contains('hide')) drawAvGrid(); }, 0));
 $('avGrid').onclick = e => {
   const t = $('avTeacher').value; if (!t) return;
   const set = new Set(unavMap[t] || []);
@@ -675,6 +731,7 @@ $('avGrid').onclick = e => {
   saveUnav(); drawAvGrid(); drawAvSummary();
 };
 function unavFor(pb){ return pb.teachers.map(t => { const a = new Array(S).fill(false); (unavMap[t]||[]).forEach(k => { const [d,p] = k.split('-').map(Number); if (p < P && d < D) a[d*P+p] = true; }); return a; }); }
+function dayCapFor(pb){ return pb.teachers.map(t => Array.from({length:D}, (_,d) => { const v = (capMap[t]||[])[d]; return (v !== null && v !== undefined) ? v : cfg.dmax; })); }
 function morningArr(){ const brk = $('useTime').checked ? +$('tBrk').value : 0; const n = brk > 0 ? brk : Math.ceil(cfg.periods/2); return Array.from({length:cfg.periods}, (_,p) => p < n); }
 function drawMornInfo(){ const m = morningArr().filter(Boolean).length; $('mornInfo').textContent = `Morning = periods 1–${m}${$('useTime').checked && +$('tBrk').value>0 ? ' (before the break)' : ''}, afternoon = periods ${m+1}–${cfg.periods}. Each teacher gets a fair share of both.`; }
 ['useTime','tBrk'].forEach(id => $(id).addEventListener('change', drawMornInfo));
@@ -701,13 +758,13 @@ function generate(){
   if(!rows.length){ $('inmsg').innerHTML = '<div class="msg bad">Add your subjects first — upload an Excel file, paste rows, or try an example.</div>'; $('data').scrollIntoView({behavior:'smooth',block:'center'}); return; }
   configure(cfg.days.map(i=>ALL_DAYS[i]), cfg.periods);
   const pb = buildProblem(rows);
-  const unav = unavFor(pb), morning = morningArr();
-  const errs = precheck(pb, cfg.maxC, unav);
+  const unav = unavFor(pb), morning = morningArr(), dayCap = dayCapFor(pb);
+  const errs = precheck(pb, cfg.maxC, unav, dayCap);
   let h = '';
   if(pb.warnings.length) h += `<div class="msg warn">${pb.warnings.length} row(s) skipped:<ul>${pb.warnings.slice(0,8).map(w=>`<li>${esc(w)}</li>`).join('')}</ul></div>`;
   if(errs.length){ h += `<div class="msg bad"><b>This can’t be scheduled with the current settings:</b><ul>${errs.map(e=>`<li>${esc(e)}</li>`).join('')}</ul>Add a working day or period, or reduce those hours.</div>`; $('inmsg').innerHTML = h; $('inmsg').scrollIntoView({behavior:'smooth',block:'center'}); return; }
   $('inmsg').innerHTML = h;
-  const solver = new Solver(pb, {maxConsec:cfg.maxC, subjCap:cfg.cap, unav, morning});
+  const solver = new Solver(pb, {maxConsec:cfg.maxC, subjCap:cfg.cap, unav, morning, dayCap});
   running = true; $('gen').disabled = true; $('regen').disabled = true;
   $('prog').classList.remove('hide'); const bar = $('prog').firstElementChild;
   const MAX = 1500, t0 = performance.now();
@@ -720,9 +777,9 @@ function generate(){
       running = false; $('gen').disabled = false; $('regen').disabled = false; $('prog').classList.add('hide');
       $('status').textContent = solver.done ? `Generated in ${((performance.now()-t0)/1000).toFixed(1)} seconds` : 'Could not place every hour — see details below';
       const cg = solver.done ? solver.solution : solver.best;
-      const board = new Board(pb, cg, {maxConsec:cfg.maxC, cap: solver.relaxedUsed ? cfg.cap+1 : cfg.cap, unav, morning});
+      const board = new Board(pb, cg, {maxConsec:cfg.maxC, cap: solver.relaxedUsed ? cfg.cap+1 : cfg.cap, unav, morning, dayCap});
       if (solver.done && $('balance').checked) board.balance(40000);
-      state = {pb, maxC:cfg.maxC, cap:cfg.cap, cg: board.cg, board, unav, morning, solved: solver.done, relaxed: solver.relaxedUsed, total: solver.total, times: timeLabels(), brk: $('useTime').checked ? +$('tBrk').value : 0, days: DAYS.slice(), edited:false};
+      state = {pb, maxC:cfg.maxC, cap:cfg.cap, cg: board.cg, board, unav, morning, dayCap, solved: solver.done, relaxed: solver.relaxedUsed, total: solver.total, times: timeLabels(), brk: $('useTime').checked ? +$('tBrk').value : 0, days: DAYS.slice(), edited:false};
       pick = null; undoStack = [];
       fillPick(); render(); if(solver.done) logTimetable(state);
       $('out').classList.remove('hide'); $('out').scrollIntoView({behavior:'smooth', block:'start'});
@@ -749,11 +806,11 @@ const cross = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" strok
 
 function render(){
   const {pb, cg, maxC, solved, relaxed, total} = state;
-  const v = verify(pb, cg, maxC, state.unav); state.v = v;
+  const v = verify(pb, cg, maxC, state.unav, state.dayCap); state.v = v;
   $('undo').classList.toggle('hide', !undoStack.length);
   const placed = cg.reduce((a,r)=>a+r.filter(x=>x>=0).length,0);
   const chk = (ok, txt) => `<div class="check ${ok?'':'no'}"><span class="dot">${ok?tick:cross}</span><span>${txt}</span></div>`;
-  let h = `<div class="checks">${chk(solved, solved?`All ${total} hours scheduled`:`${placed} of ${total} hours scheduled`)}${chk(!v.clashes.length,'No teacher in two classes at once')}${chk(!v.longRuns.length,`No teacher over ${maxC} continuous hour${maxC>1?'s':''}`)}${state.unav.some(a=>a.some(Boolean)) ? chk(!v.unavHits.length,'Teacher unavailable periods kept free') : ''}</div>`;
+  let h = `<div class="checks">${chk(solved, solved?`All ${total} hours scheduled`:`${placed} of ${total} hours scheduled`)}${chk(!v.clashes.length,'No teacher in two classes at once')}${chk(!v.longRuns.length,`No teacher over ${maxC} continuous hour${maxC>1?'s':''}`)}${state.unav.some(a=>a.some(Boolean)) ? chk(!v.unavHits.length,'Teacher unavailable periods kept free') : ''}${state.dayCap.some(a=>a.some(x=>x<P)) ? chk(!v.capHits.length,'Daily hour limits kept') : ''}</div>`;
   if(solved && relaxed) h += `<div class="msg warn">To fit everything, a subject comes ${state.cap+1} times on some days (one more than your setting).</div>`;
   if(!solved){
     const left = pb.groups.map((g,gi)=>({g, n: g.count - cg[g.c].filter(x=>x===gi).length})).filter(x=>x.n>0);
@@ -812,7 +869,7 @@ function renderView(){
     pb.teachers.forEach((tn, t) => {
       let tot=0, longest=0, mo=0; const per=[];
       for(let d=0; d<D; d++){ let n=0, run=0; for(let p=0;p<P;p++){ if(v.tb[t][d*P+p]!==null){n++;run++;longest=Math.max(longest,run); if(state.morning[p]) mo++;} else run=0; } per.push(n); tot+=n; }
-      h += `<tr><th>${esc(tn)}</th>${per.map(n=>`<td>${n||'<span style="color:#c0c5d0">0</span>'}</td>`).join('')}<td><b>${tot}</b></td><td>${mo}</td><td>${tot-mo}</td><td>${longest} hr</td><td><div class="bar-in"><i style="width:${tot/max*100}%"></i></div></td></tr>`;
+      h += `<tr><th>${esc(tn)}</th>${per.map((n,d)=>`<td>${n||'<span style="color:#c0c5d0">0</span>'}${state.dayCap[t][d]<P?`<span style="color:var(--soft);font-size:11px"> /${state.dayCap[t][d]}</span>`:''}</td>`).join('')}<td><b>${tot}</b></td><td>${mo}</td><td>${tot-mo}</td><td>${longest} hr</td><td><div class="bar-in"><i style="width:${tot/max*100}%"></i></div></td></tr>`;
     });
     h += '</tbody></table></div>';
   }
