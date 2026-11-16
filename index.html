@@ -144,6 +144,9 @@ td.brk span,th.brk span{writing-mode:vertical-rl;transform:rotate(180deg)}
 .akp-sm{width:22px;height:22px;border-radius:50%;vertical-align:middle;margin-right:6px;background:#fff;object-fit:contain;box-shadow:0 0 0 1px var(--line)}
 .mlogos{display:flex;justify-content:center;align-items:center;gap:10px}
 .mlogos img{width:52px;height:52px;border-radius:50%;object-fit:contain;background:#fff;box-shadow:0 0 0 1px var(--line)}
+.fxrow{display:grid;grid-template-columns:1.2fr 1fr .8fr 1.4fr auto;gap:8px;margin-top:10px;align-items:center}
+@media(max-width:640px){.fxrow{grid-template-columns:1.1fr 1.1fr .9fr;padding-bottom:10px;border-bottom:1px dashed var(--line)}.fxrow .fxc{grid-column:1/3}}
+.fxrow input,.fxrow select{padding:8px 9px;font-size:13.5px}
 .avgrid{min-width:340px;table-layout:fixed}
 .avgrid select{width:100%;padding:6px 4px;font-size:12.5px;border-radius:8px}
 .avgrid select.set{border-color:var(--brand);color:var(--brand);font-weight:600;background:var(--brand-l)}
@@ -260,7 +263,10 @@ table.key{font-size:12.5px;min-width:520px}table.key th,table.key td{text-align:
       <div class="field"><span class="lbl">Working days</span><div class="days"><span class="day on">Mon</span><span class="day on">Tue</span><span class="day on">Wed</span><span class="day on">Thu</span><span class="day on">Fri</span></div><span class="help">Saturday and Sunday are holidays</span></div>
       <div class="field"><span class="lbl">Periods per day</span><div class="stepper"><button id="pMinus" aria-label="fewer">−</button><output id="pOut">5</output><button id="pPlus" aria-label="more">+</button></div></div>
       <div class="field"><span class="lbl">Max continuous hours for a teacher</span><div class="seg" id="maxc"><button data-v="1">1</button><button data-v="2" class="on">2</button><button data-v="3">3</button><button data-v="4">4</button></div></div>
-      <div class="field"><span class="lbl">Max hours per teacher per day</span><div class="seg" id="dmax"><button data-v="99" class="on">Any</button><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button><button data-v="5">5</button></div><span class="help">Change it for any teacher or day under “Teacher availability &amp; daily hours” below</span></div>
+      <div class="field"><span class="lbl">Hours per teacher per day</span>
+        <div class="row" style="gap:10px"><span class="help" style="min-width:30px">Min</span><div class="seg" id="dmin"><button data-v="0">Any</button><button data-v="1">1</button><button data-v="2">2</button><button data-v="3" class="on">3</button><button data-v="4">4</button></div></div>
+        <div class="row" style="gap:10px"><span class="help" style="min-width:30px">Max</span><div class="seg" id="dmax"><button data-v="99">Any</button><button data-v="2">2</button><button data-v="3">3</button><button data-v="4" class="on">4</button><button data-v="5">5</button></div></div>
+        <span class="help">Default 3 – 4 hours a day. A teacher with fewer weekly hours gets a lower minimum automatically; change any teacher's days under “Teacher availability &amp; daily hours”.</span></div>
       <div class="field"><span class="lbl">Same subject per day (per class)</span><div class="seg" id="cap"><button data-v="1">1</button><button data-v="2" class="on">Up to 2</button><button data-v="3">Up to 3</button><button data-v="99">Any</button></div></div>
     </div>
     <div class="sep"></div>
@@ -277,6 +283,13 @@ table.key{font-size:12.5px;min-width:520px}table.key th,table.key td{text-align:
       <p class="help" style="margin:8px 0 0">Tap a period to mark it <b style="color:#b42318">✕ Not available</b>. Tap a day name to block the whole day. Use <b>Max hours</b> to set how many hours this teacher can take that day.</p>
     </div>
     <div class="summary" id="avSummary"></div>
+    <div class="sep"></div>
+    <div class="row between">
+      <div><span class="lbl">Fixed college-wide slots</span><div class="help">Optional: sessions fixed for the whole college, e.g. VAC on Wednesday Hour III, MDC / SEC / AEC at set hours</div></div>
+      <button class="btn" id="fxAdd">+ Add fixed slot</button>
+    </div>
+    <div id="fxList"></div>
+    <datalist id="fxNames"><option>VAC</option><option>MDC</option><option>SEC</option><option>AEC</option><option>AEC (ENG)</option><option>AEC OL (H/M)</option><option>Library</option><option>Sports</option><option>Seminar</option></datalist>
     <div class="sep"></div>
     <label class="toggle"><input type="checkbox" id="useTime"><span class="sw"></span>Show period timings</label>
     <div class="timing hide" id="timing">
@@ -362,7 +375,8 @@ table.key{font-size:12.5px;min-width:520px}table.key th,table.key td{text-align:
           <tr><td>Institution / Timetable title</td><td>Your college</td><td>Printed on every Excel sheet</td></tr>
           <tr><td>Periods per day</td><td>5</td><td>Your college has 4, 6 or more</td></tr>
           <tr><td>Max continuous hours</td><td>2</td><td>Allow 3 in a row, or 1 for a gap after every period</td></tr>
-          <tr><td>Max hours per teacher per day</td><td>Any</td><td>A common cap for everyone, e.g. 4</td></tr>
+          <tr><td>Hours per teacher per day</td><td>Min 3 · Max 4</td><td>Change the range for all teachers; teachers with fewer weekly hours get a lower minimum automatically</td></tr>
+          <tr><td>Fixed college-wide slots</td><td>None</td><td>VAC / MDC / SEC / AEC fixed for the whole college — see step 5</td></tr>
           <tr><td>Same subject per day</td><td>Up to 2</td><td>1 spreads papers across the week; Any for labs</td></tr>
           <tr><td>Morning &amp; afternoon evenly</td><td>On</td><td>Rarely — keeps workloads fair</td></tr>
           <tr><td>Period timings</td><td>Off</td><td>To print times and a lunch break</td></tr></table>
@@ -374,6 +388,7 @@ table.key{font-size:12.5px;min-width:520px}table.key th,table.key td{text-align:
           <li><b>Hours for a day:</b> choose <b>Max hours</b> per row, e.g. Mon 4, Tue 3, Wed 3. <b>0</b> = day off. Rows on <i>Default</i> follow the general setting.</li>
           <li>Repeat for other teachers, then tap <b>Done</b>. Tags summarise what you set.</li></ol>
         <p>If a teacher's daily limits add up to their weekly hours, they get exactly those hours each day. If the limits leave too little room, ClashFree tells you before generating.</p>
+        <p><b>Fixed college-wide slots</b> (e.g. VAC every Wednesday Hour III): tap <b>+ Add fixed slot</b>, type the session name, choose the day and hour, and leave the class box empty for all classes — or type batches such as <i>1K, 2K</i>. These periods are reserved before anything else is placed, show in grey italics and cannot be moved. If your file also has a VAC row (Teacher blank) for a class, the fixed periods count towards its hours.</p>
       </details>
 
       <details><summary><span>6</span>Generate and read the timetable</summary>
@@ -522,11 +537,43 @@ function precheck(pb, maxConsec, unav, dayCap) {
 
 function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
+// minimum hours per teacher per day, lowered where the weekly load or limits can't support it
+function minEffFor(pb, minDay, dayCap, unav) {
+  return pb.teachers.map((_, t) => {
+    if (!minDay) return new Array(D).fill(0);
+    const active = Array.from({length: D}, (_, d) => (dayCap ? dayCap[t][d] : 99) >= 1 && (!unav || unav[t].slice(d * P, d * P + P).some(x => !x)));
+    const k = active.filter(Boolean).length; if (!k) return new Array(D).fill(0);
+    const base = Math.min(minDay, Math.floor(pb.teacherLoad[t] / k));
+    return active.map((a, d) => a ? Math.min(base, dayCap ? dayCap[t][d] : 99) : 0);
+  });
+}
+// fixed college-wide slots: [{name, d, p, classes:'all'|[names]}] -> pre-placed common periods
+function applyFixed(pb, fixed) {
+  pb.fixed = []; pb.fixedNotes = [];
+  (fixed || []).forEach(f => {
+    if (!(f.d < D) || !(f.p < P) || !f.name) return;
+    const want = f.classes === 'all' || !f.classes || !f.classes.length ? pb.classes.map((_, i) => i) : f.classes.map(n => pb.classes.findIndex(c => c.toLowerCase() === String(n).trim().toLowerCase())).filter(i => i >= 0);
+    const nm = String(f.name).trim(), key = nm.toLowerCase();
+    want.forEach(c => {
+      const s = f.d * P + f.p;
+      if (pb.fixed.some(([gi, ss]) => pb.groups[gi].c === c && ss === s)) return;
+      let gi = pb.groups.findIndex(g => g.c === c && g.common && (g.code.toLowerCase() === key || String(g.subj).toLowerCase() === key));
+      if (gi < 0) { gi = pb.groups.length; pb.groups.push({c, subj: nm, ts: [], count: 0, sk: c + '|' + nm, code: nm, lab: false, common: true, fixed: true, fixedN: 0}); }
+      const g = pb.groups[gi]; g.fixed = true; g.fixedN = (g.fixedN || 0) + 1;
+      if (g.fixedN > g.count) { pb.classLoad[c] += g.fixedN - g.count; g.count = g.fixedN; }
+      pb.fixed.push([gi, s]);
+    });
+    pb.fixedNotes.push(`${nm} – ${DAYS[f.d]} Hour ${['I','II','III','IV','V','VI','VII','VIII','IX','X'][f.p] || f.p + 1} (${want.length === pb.classes.length ? 'all classes' : want.map(i => pb.classes[i]).join(', ')})`);
+  });
+  return pb;
+}
+
 class Solver {
   constructor(pb, opts) {
     this.pb = pb; this.maxC = opts.maxConsec; this.cap = opts.subjCap;
     this.unav = opts.unav || pb.teachers.map(() => new Array(S).fill(false));
     this.dayCap = opts.dayCap || pb.teachers.map(() => new Array(D).fill(99));
+    this.minEff = minEffFor(pb, opts.minDay || 0, this.dayCap, this.unav);
     this.morn = opts.morning || Array.from({length: P}, (_, p) => p < Math.ceil(P / 2));
     this.frac = this.morn.filter(Boolean).length / P;
     this.best = null; this.bestPlaced = -1; this.done = false; this.solution = null; this.restarts = 0;
@@ -542,6 +589,7 @@ class Solver {
     this.need = pb.teachers.map(() => 0); pb.groups.forEach(g => g.ts.forEach(t => this.need[t] += g.count));
     this.placed = 0; this.nodes = 0; this.curCap = cap;
     this.jitter = pb.groups.map(() => Math.random());
+    (pb.fixed || []).forEach(([gi, s]) => this.set(gi, s, true));
   }
   ok(gi, s) {
     const g = this.pb.groups[gi];
@@ -583,14 +631,17 @@ class Solver {
         }
         best = nb;
       }
-      const add = Math.max(...best);
-      tot += Math.max(0, Math.min(add, this.dayCap[t][d] - fixed));
+      const add = Math.max(0, Math.min(Math.max(...best), this.dayCap[t][d] - fixed));
+      const deficit = Math.max(0, this.minEff[t][d] - fixed);
+      if (deficit > add) return -1;                 // this day can no longer reach its minimum
+      tot += add; this._def += deficit;
     }
     return tot;
   }
+  teacherOk(t) { this._def = 0; const cap = this.capLeft(t); return cap >= 0 && this.need[t] <= cap && this._def <= this.need[t]; }
   dfs() {
     if (this.placed === this.total) return true;
-    for (let t = 0; t < this.need.length; t++) if (this.need[t] > 0 && this.need[t] > this.capLeft(t)) return false;
+    for (let t = 0; t < this.need.length; t++) if (!this.teacherOk(t)) return false;
     if (++this.nodes > this.limit) return false;
     if (this.placed > this.bestPlaced) { this.bestPlaced = this.placed; this.best = this.cg.map(r => r.slice()); }
     let bg = -1, bo = null;
@@ -608,7 +659,8 @@ class Solver {
       const d = (s / P) | 0;
       let tl = 0, bal = 0; const mo = this.morn[s % P] ? 1 : 0;
       for (const t of g.ts) {
-        for (let p = 0; p < P; p++) tl += this.tb[t][d * P + p];
+        let n = 0; for (let p = 0; p < P; p++) n += this.tb[t][d * P + p];
+        tl += n; if (n < this.minEff[t][d]) tl -= 4;
         bal += Math.abs(this.tm[t] + mo - this.frac * (this.tn[t] + 1));
       }
       return [s, sd[d] * 10 + tl * 1.5 + bal * 3 + Math.random() * 3];
@@ -632,9 +684,9 @@ class Solver {
   }
 }
 
-function verify(pb, cg, maxC, unav, dayCap) {
+function verify(pb, cg, maxC, unav, dayCap, minEff) {
   const tb = pb.teachers.map(() => new Array(S).fill(null));
-  const clashes = [], longRuns = [], unavHits = [], capHits = [];
+  const clashes = [], longRuns = [], unavHits = [], capHits = [], minHits = [];
   cg.forEach((row, c) => row.forEach((gi, s) => {
     if (gi < 0) return;
     pb.groups[gi].ts.forEach(t => {
@@ -648,9 +700,10 @@ function verify(pb, cg, maxC, unav, dayCap) {
       let run = 0, n = 0;
       for (let p = 0; p < P; p++) { if (row[d * P + p] !== null) n++; run = row[d * P + p] !== null ? run + 1 : 0; if (run > maxC && longRuns[longRuns.length - 1] !== `${pb.teachers[t]} on ${DAYS[d]}`) longRuns.push(`${pb.teachers[t]} on ${DAYS[d]}`); }
       if (dayCap && n > dayCap[t][d]) capHits.push(`${pb.teachers[t]} on ${DAYS[d]}`);
+      if (minEff && n < minEff[t][d]) minHits.push(`${pb.teachers[t]} on ${DAYS[d]}`);
     }
   });
-  return { clashes, longRuns, unavHits, capHits, tb };
+  return { clashes, longRuns, unavHits, capHits, minHits, tb };
 }
 
 // ---------- Board: checked swaps (manual moves + balancing) ----------
@@ -659,6 +712,7 @@ class Board {
     this.pb = pb; this.cg = cg; this.maxC = opts.maxConsec; this.cap = opts.cap;
     this.unav = opts.unav; this.morn = opts.morning;
     this.dayCap = opts.dayCap || pb.teachers.map(() => new Array(D).fill(99));
+    this.minEff = opts.minEff || pb.teachers.map(() => new Array(D).fill(0));
     this.tb = pb.teachers.map(() => new Array(S).fill(0));
     cg.forEach(row => row.forEach((gi, s) => { if (gi >= 0) pb.groups[gi].ts.forEach(t => this.tb[t][s]++); }));
   }
@@ -675,6 +729,7 @@ class Board {
     if (s1 === s2) return 'Same period';
     const a = this.cg[c][s1], b = this.cg[c][s2], pb = this.pb;
     if (a === b) return 'Same subject — nothing changes';
+    for (const gi of [a, b]) if (gi >= 0 && pb.groups[gi].fixed) return `${pb.groups[gi].code} is a fixed college-wide slot`;
     const T = pb.teachers, lbl = s => `${DAYS[(s / P) | 0]} period ${s % P + 1}`;
     const into = (gi, to, other) => {
       for (const t of this.ts(gi)) {
@@ -692,6 +747,7 @@ class Board {
       if (!this.runOk(t, d)) { r = `${T[t]} would teach more than ${this.maxC} hours continuously`; break outer; }
       let n = 0; for (let p = 0; p < P; p++) if (this.tb[t][d * P + p]) n++;
       if (n > this.dayCap[t][d]) { r = `${T[t]} can take only ${this.dayCap[t][d]} hour${this.dayCap[t][d] === 1 ? '' : 's'} on ${DAYS[d]}`; break outer; }
+      if (n < this.minEff[t][d]) { r = `${T[t]} would have fewer than ${this.minEff[t][d]} hours on ${DAYS[d]}`; break outer; }
     }
     if (!r && this.cap < 99) outer2: for (const d of days) {
       const cnt = {};
@@ -722,11 +778,13 @@ class Board {
 }
 
 // export
-if (typeof module !== 'undefined') module.exports = { buildProblem, autoCode, cellLabel, teacherCode, precheck, Solver, verify, Board, configure, DAYS, P, D, S };
+if (typeof module !== 'undefined') module.exports = { applyFixed, minEffFor, buildProblem, autoCode, cellLabel, teacherCode, precheck, Solver, verify, Board, configure, DAYS, P, D, S };
 
 </script>
 <script>
 const $ = id => document.getElementById(id);
+const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
+
 const SAMPLES = {
 school: `Class	Subject	Teacher	Hours
 Class 8A	Mathematics	Ravi	6
@@ -791,7 +849,7 @@ college: `Class	Subject	Teacher	Allotted hrs	Code	Teacher name
 2K	VAC	-	3		`};
 const TEMPLATE = 'Class\tSubject\tTeacher\tAllotted hrs\n';
 
-const cfg = {days:[0,1,2,3,4], periods:5, maxC:2, cap:2, dmax:99};
+const cfg = {days:[0,1,2,3,4], periods:5, maxC:2, cap:2, dmax:4, dmin:3};
 let state = null, view = 'master', running = false;
 
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),1900);}
@@ -808,7 +866,7 @@ $('pMinus').onclick = () => { if(cfg.periods>2){cfg.periods--; drawPeriods();} }
 $('pPlus').onclick = () => { if(cfg.periods<10){cfg.periods++; drawPeriods();} };
 function seg(id, key){ $(id).onclick = e => { const b=e.target.closest('button'); if(!b) return; $(id).querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); cfg[key]=+b.dataset.v;
   if(key==='maxC') $('chipConsec').textContent = `✓ No teacher teaches more than ${cfg.maxC} hour${cfg.maxC>1?'s':''} continuously`; }; }
-seg('maxc','maxC'); seg('cap','cap'); seg('dmax','dmax');
+seg('maxc','maxC'); seg('cap','cap'); seg('dmax','dmax'); seg('dmin','dmin');
 $('useTime').onchange = () => $('timing').classList.toggle('hide', !$('useTime').checked);
 drawPeriods();
 
@@ -950,6 +1008,34 @@ $('pMinus').addEventListener('click', ()=>{ drawMornInfo(); drawAvSummary(); if(
 $('pPlus').addEventListener('click', ()=>{ drawMornInfo(); drawAvSummary(); if(!$('avPanel').classList.contains('hide')) drawAvGrid(); });
 drawMornInfo(); drawAvSummary();
 
+// ---------- fixed college-wide slots ----------
+let fixedSlots = []; try { fixedSlots = JSON.parse(store.get('fixed') || '[]') || []; } catch (e) {}
+function saveFixed(){ store.set('fixed', JSON.stringify(fixedSlots)); }
+function drawFixed(){
+  $('fxList').innerHTML = fixedSlots.map((f,i) => `<div class="fxrow" data-i="${i}">
+    <input type="text" list="fxNames" data-k="name" value="${esc(f.name||'')}" placeholder="Session, e.g. VAC">
+    <select data-k="d">${ALL_DAYS.slice(0,5).map((d,k)=>`<option value="${k}" ${+f.d===k?'selected':''}>${d}</option>`).join('')}</select>
+    <select data-k="p">${Array.from({length:cfg.periods},(_,k)=>`<option value="${k}" ${+f.p===k?'selected':''}>Hour ${ROMAN[k]||k+1}</option>`).join('')}</select>
+    <input class="fxc" type="text" data-k="cls" value="${esc(f.cls||'')}" placeholder="All classes (or e.g. 1K, 2K)">
+    <button class="btn ghost" data-del="${i}" title="Remove">✕</button></div>`).join('');
+}
+$('fxAdd').onclick = () => { fixedSlots.push({name:'VAC', d:2, p:2, cls:''}); saveFixed(); drawFixed(); };
+$('fxList').addEventListener('input', e => { const row = e.target.closest('.fxrow'); if (!row) return; const f = fixedSlots[+row.dataset.i], k = e.target.dataset.k; f[k] = (k==='d'||k==='p') ? +e.target.value : e.target.value; saveFixed(); });
+$('fxList').addEventListener('change', e => { const row = e.target.closest('.fxrow'); if (!row) return; const f = fixedSlots[+row.dataset.i], k = e.target.dataset.k; f[k] = (k==='d'||k==='p') ? +e.target.value : e.target.value; saveFixed(); });
+$('fxList').addEventListener('click', e => { const b = e.target.closest('[data-del]'); if (!b) return; fixedSlots.splice(+b.dataset.del, 1); saveFixed(); drawFixed(); });
+['pMinus','pPlus'].forEach(id => $(id).addEventListener('click', drawFixed));
+function fixedFor(pb){
+  const unknown = [];
+  const out = fixedSlots.filter(f => f.name && String(f.name).trim()).map(f => {
+    const raw = String(f.cls||'').trim();
+    const list = !raw || /^all/i.test(raw) ? 'all' : raw.split(/[,;\/]+/).map(x=>x.trim()).filter(Boolean);
+    if (list !== 'all') list.forEach(n => { if (!pb.classes.some(c => c.toLowerCase() === n.toLowerCase())) unknown.push(n); });
+    return {name: String(f.name).trim(), d: +f.d, p: +f.p, classes: list};
+  });
+  return {out, unknown};
+}
+drawFixed();
+
 // ---------- timings ----------
 function timeLabels(){
   if(!$('useTime').checked) return null;
@@ -969,13 +1055,16 @@ function generate(){
   if(!rows.length){ $('inmsg').innerHTML = '<div class="msg bad">Add your subjects first — upload an Excel file, paste rows, or try an example.</div>'; $('data').scrollIntoView({behavior:'smooth',block:'center'}); return; }
   configure(cfg.days.map(i=>ALL_DAYS[i]), cfg.periods);
   const pb = buildProblem(rows);
+  const fx = fixedFor(pb); applyFixed(pb, fx.out);
+  if (cfg.dmin > 0 && cfg.dmax < 99 && cfg.dmin > cfg.dmax) { $('inmsg').innerHTML = '<div class="msg bad">Minimum hours per day is higher than the maximum. Change one of them in Settings.</div>'; return; }
   const unav = unavFor(pb), morning = morningArr(), dayCap = dayCapFor(pb);
   const errs = precheck(pb, cfg.maxC, unav, dayCap);
   let h = '';
+  if(fx.unknown.length) pb.warnings.push(`Fixed slot class not found: ${fx.unknown.join(', ')} (use the class names from your file).`);
   if(pb.warnings.length) h += `<div class="msg warn">${pb.warnings.length} row(s) skipped:<ul>${pb.warnings.slice(0,8).map(w=>`<li>${esc(w)}</li>`).join('')}</ul></div>`;
   if(errs.length){ h += `<div class="msg bad"><b>This can’t be scheduled with the current settings:</b><ul>${errs.map(e=>`<li>${esc(e)}</li>`).join('')}</ul>Add a working day or period, or reduce those hours.</div>`; $('inmsg').innerHTML = h; $('inmsg').scrollIntoView({behavior:'smooth',block:'center'}); return; }
   $('inmsg').innerHTML = h;
-  const solver = new Solver(pb, {maxConsec:cfg.maxC, subjCap:cfg.cap, unav, morning, dayCap});
+  const solver = new Solver(pb, {maxConsec:cfg.maxC, subjCap:cfg.cap, unav, morning, dayCap, minDay:cfg.dmin});
   running = true; $('gen').disabled = true; $('regen').disabled = true;
   $('prog').classList.remove('hide'); const bar = $('prog').firstElementChild;
   const MAX = 1500, t0 = performance.now();
@@ -988,9 +1077,9 @@ function generate(){
       running = false; $('gen').disabled = false; $('regen').disabled = false; $('prog').classList.add('hide');
       $('status').textContent = solver.done ? `Generated in ${((performance.now()-t0)/1000).toFixed(1)} seconds` : 'Could not place every hour — see details below';
       const cg = solver.done ? solver.solution : solver.best;
-      const board = new Board(pb, cg, {maxConsec:cfg.maxC, cap: solver.relaxedUsed ? cfg.cap+1 : cfg.cap, unav, morning, dayCap});
+      const board = new Board(pb, cg, {maxConsec:cfg.maxC, cap: solver.relaxedUsed ? cfg.cap+1 : cfg.cap, unav, morning, dayCap, minEff: solver.minEff});
       if (solver.done && $('balance').checked) board.balance(40000);
-      state = {pb, maxC:cfg.maxC, cap:cfg.cap, cg: board.cg, board, unav, morning, dayCap, solved: solver.done, relaxed: solver.relaxedUsed, total: solver.total, times: timeLabels(), brk: $('useTime').checked ? +$('tBrk').value : 0, days: DAYS.slice(), edited:false};
+      state = {pb, maxC:cfg.maxC, cap:cfg.cap, cg: board.cg, board, unav, morning, dayCap, minEff: solver.minEff, dmin: cfg.dmin, dmaxG: cfg.dmax, solved: solver.done, relaxed: solver.relaxedUsed, total: solver.total, times: timeLabels(), brk: $('useTime').checked ? +$('tBrk').value : 0, days: DAYS.slice(), edited:false};
       pick = null; undoStack = [];
       fillPick(); render(); if(solver.done) logTimetable(state);
       $('out').classList.remove('hide'); $('out').scrollIntoView({behavior:'smooth', block:'start'});
@@ -1017,15 +1106,15 @@ const cross = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" strok
 
 function render(){
   const {pb, cg, maxC, solved, relaxed, total} = state;
-  const v = verify(pb, cg, maxC, state.unav, state.dayCap); state.v = v;
+  const v = verify(pb, cg, maxC, state.unav, state.dayCap, state.minEff); state.v = v;
   $('undo').classList.toggle('hide', !undoStack.length);
   const placed = cg.reduce((a,r)=>a+r.filter(x=>x>=0).length,0);
   const chk = (ok, txt) => `<div class="check ${ok?'':'no'}"><span class="dot">${ok?tick:cross}</span><span>${txt}</span></div>`;
-  let h = `<div class="checks">${chk(solved, solved?`All ${total} hours scheduled`:`${placed} of ${total} hours scheduled`)}${chk(!v.clashes.length,'No teacher in two classes at once')}${chk(!v.longRuns.length,`No teacher over ${maxC} continuous hour${maxC>1?'s':''}`)}${state.unav.some(a=>a.some(Boolean)) ? chk(!v.unavHits.length,'Teacher unavailable periods kept free') : ''}${state.dayCap.some(a=>a.some(x=>x<P)) ? chk(!v.capHits.length,'Daily hour limits kept') : ''}</div>`;
+  let h = `<div class="checks">${chk(solved, solved?`All ${total} hours scheduled`:`${placed} of ${total} hours scheduled`)}${chk(!v.clashes.length,'No teacher in two classes at once')}${chk(!v.longRuns.length,`No teacher over ${maxC} continuous hour${maxC>1?'s':''}`)}${state.unav.some(a=>a.some(Boolean)) ? chk(!v.unavHits.length,'Teacher unavailable periods kept free') : ''}${state.dayCap.some(a=>a.some(x=>x<P)) || state.dmin ? chk(!v.capHits.length && !v.minHits.length, state.dmin ? `${state.dmin}${state.dmaxG<99?'–'+state.dmaxG:'+'} hours per teacher per day` : 'Daily hour limits kept') : ''}${(pb.fixed||[]).length ? chk(pb.fixed.every(([gi,s])=>cg[pb.groups[gi].c][s]===gi), `${pb.fixedNotes.length} fixed college-wide slot${pb.fixedNotes.length>1?'s':''} kept`) : ''}</div>`;
   if(solved && relaxed) h += `<div class="msg warn">To fit everything, a subject comes ${state.cap+1} times on some days (one more than your setting).</div>`;
   if(!solved){
     const left = pb.groups.map((g,gi)=>({g, n: g.count - cg[g.c].filter(x=>x===gi).length})).filter(x=>x.n>0);
-    h += `<div class="msg bad"><b>Not yet scheduled:</b><ul>${left.map(x=>`<li>${esc(pb.classes[x.g.c])} – ${esc(x.g.subj)} (${esc(x.g.ts.map(t=>pb.teachers[t]).join(' / '))}): ${x.n} hr</li>`).join('')}</ul>Try “Another version”, allow more of the same subject per day, add a period/day, or share a heavily loaded teacher’s hours.</div>`;
+    h += `<div class="msg bad"><b>Not yet scheduled:</b><ul>${left.map(x=>`<li>${esc(pb.classes[x.g.c])} – ${esc(x.g.subj)} (${esc(x.g.ts.map(t=>pb.teachers[t]).join(' / '))}): ${x.n} hr</li>`).join('')}</ul>Try “Another version”, allow more of the same subject per day, move a fixed slot to another hour, set the daily minimum to 2, or share a heavily loaded teacher’s hours.</div>`;
   }
   const slots = pb.classes.length*S;
   h += `<div class="kpis"><div class="kpi"><b>${pb.classes.length}</b><span>Classes</span></div><div class="kpi"><b>${pb.teachers.length}</b><span>Teachers</span></div><div class="kpi"><b>${placed}</b><span>Hours placed</span></div><div class="kpi"><b>${slots-placed}</b><span>Free periods</span></div></div>`;
@@ -1052,7 +1141,6 @@ function grid(name, meta, cellFn){
   }
   return h + '</tbody></table></div></div>';
 }
-const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
 const TPAL = ['FFFF99','CCFFCC','99CCFF','FFCC99','CC99FF','CCFFFF','FF99CC','FFCCCC','CCCCFF','FFE699','99FFCC','FFCC66','CCFF99','66CCFF','FF9999','E2C9A6','B4C7E7','C5E0B4','F8CBAD','D9D2E9'];
 const TPAL_NAMES = ['Light Yellow','Light Green','Pale Blue','Tan','Lavender','Light Turquoise','Rose','Light Pink','Periwinkle','Gold','Mint','Light Orange','Lime','Sky Blue','Coral','Beige','Steel Blue','Sage','Peach','Lilac'];
 const tColor = t => TPAL[t % TPAL.length];
@@ -1081,7 +1169,7 @@ function masterLegend(){
   let h = '<div class="legend"><div class="lg-h">Teachers</div><div class="lg-t">' + pb.teachers.map((t,i)=>`<span style="background:#${tColor(i)}"><b>${esc(pb.tcode[i])}</b>${pb.tname[i]!==pb.tcode[i]?' – '+esc(pb.tname[i]):''} · ${pb.teacherLoad[i]} h</span>`).join('') + '</div>';
   h += '<div class="lg-h">Subjects and teachers</div><div class="scroll"><table class="key"><thead><tr><th>Batch</th><th>Code</th><th>Subject</th><th>Teacher (hrs)</th></tr></thead><tbody>';
   subjectKey().forEach(e => { h += `<tr><td>${esc(pb.classes[e.c])}</td><td><b>${esc(e.code)}</b></td><td>${esc(e.subj)}</td><td${e.single!==null?` style="background:#${tColor(e.single)}"`:''}>${esc(e.who)}</td></tr>`; });
-  return h + '</tbody></table></div><p class="help">Bold = lab hour · grey italic = common slot · blank = free period</p></div>';
+  return h + '</tbody></table></div><p class="help">Bold = lab hour · grey italic = common slot · blank = free period' + ((pb.fixedNotes||[]).length ? '<br>Fixed college-wide slots: ' + pb.fixedNotes.map(esc).join(' · ') : '') + '</p></div>';
 }
 function masterTable(){
   const {pb, times, brk} = state, okSet = okTargets();
@@ -1402,6 +1490,7 @@ function mainSheet(colour){
   const W = Math.max(ncol, 7);
   sh.add([]);
   sh.add([`Bold = Lab hour     ${colour ? 'Italic / grey' : 'Italic'} = Common slot (no teacher)     Blank = free period`], XS.note, {merge:W});
+  if ((pb.fixedNotes||[]).length) sh.add([`Fixed college-wide slots: ${pb.fixedNotes.join(';   ')}`], XS.note, {merge:W, h: 12 * Math.ceil(pb.fixedNotes.join('; ').length / 110) + 4});
   sh.add([]);
   // teachers legend: 2-column cells
   sh.add(['TEACHERS'], XS.sec, {merge:W});
