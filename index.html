@@ -52,7 +52,7 @@ textarea{width:100%;min-height:170px;font:12.5px/1.5 ui-monospace,SFMono-Regular
 .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
 .btn.primary:hover{background:var(--brand-d)}
 .btn.big{padding:13px 22px;font-size:15px;border-radius:12px;width:100%;justify-content:center}
-.btn.ghost{border-color:transparent;background:transparent;color:var(--brand)}
+.btn.ghost{text-decoration:none;border-color:transparent;background:transparent;color:var(--brand)}
 .btn.ghost:hover{background:var(--brand-l)}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .between{justify-content:space-between}
@@ -195,7 +195,7 @@ td.na{background:repeating-linear-gradient(45deg,#fef3f2,#fef3f2 5px,#fde8e6 5px
         <button class="btn" id="sCollege">College example</button>
       </div>
       <div class="row">
-        <button class="btn ghost" id="tpl">Copy template</button>
+        <a class="btn ghost" id="tplDl" href="https://drsubybaby-dotcom.github.io/clashfree/ClashFree_College_Template.xlsx" download target="_blank" rel="noopener">⬇ College template (Excel)</a>
         <button class="btn ghost" id="clear">Clear</button>
       </div>
     </div>
@@ -674,7 +674,7 @@ $('drop').addEventListener('drop', e => readFile(e.dataTransfer.files[0]));
 function loadSample(k){ $('data').value = SAMPLES[k]; $('inmsg').innerHTML=''; updateSummary(); store.set('data',$('data').value); }
 $('sSchool').onclick = () => loadSample('school');
 $('sCollege').onclick = () => loadSample('college');
-$('tpl').onclick = () => copyText(TEMPLATE, 'Template headings copied — paste into Excel');
+
 $('clear').onclick = () => { $('data').value=''; $('inmsg').innerHTML=''; $('summary').innerHTML=''; store.set('data',''); $('dropT').textContent='Upload Excel file'; $('dropS').textContent='Tap to choose, or drag a .xlsx / .xls / .csv file here'; };
 ['inst','ttitle'].forEach(id=>{ const v=store.get(id); if(v) $(id).value=v; $(id).addEventListener('input',()=>{store.set(id,$(id).value); if(state) renderView();}); });
 { const d=store.get('data'); if(d) { $('data').value=d; updateSummary(); } }
