@@ -144,6 +144,21 @@ td.brk span,th.brk span{writing-mode:vertical-rl;transform:rotate(180deg)}
 .akp-sm{width:22px;height:22px;border-radius:50%;vertical-align:middle;margin-right:6px;background:#fff;object-fit:contain;box-shadow:0 0 0 1px var(--line)}
 .mlogos{display:flex;justify-content:center;align-items:center;gap:10px}
 .mlogos img{width:52px;height:52px;border-radius:50%;object-fit:contain;background:#fff;box-shadow:0 0 0 1px var(--line)}
+.avgrid{min-width:300px;table-layout:fixed}
+.avgrid th{font-size:12px}
+.avgrid td{padding:4px}
+.avgrid button{width:100%;min-height:36px;border:1px solid var(--line);border-radius:8px;background:#fff;font:inherit;font-size:12px;cursor:pointer;color:#475467}
+.avgrid button.x{background:#fef3f2;border-color:#fda29b;color:#b42318;font-weight:600}
+.avgrid th.dayb{cursor:pointer;color:var(--brand);text-decoration:underline dotted}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;background:#fef3f2;color:#b42318;border:1px solid #fecdca;border-radius:999px;padding:3px 10px}
+.tip{font-size:13px;color:#475467;background:#f9fafb;border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin:0 0 14px}
+td.cell,td.free{cursor:pointer;transition:opacity .12s}
+td.selC .slot,td.selC.free{outline:3px solid var(--brand);outline-offset:-2px;border-radius:9px}
+td.okT{box-shadow:inset 0 0 0 2px #12b76a;background:#ecfdf3}
+td.noT{opacity:.38}
+td.dragover{box-shadow:inset 0 0 0 3px #12b76a}
+td.na{background:repeating-linear-gradient(45deg,#fef3f2,#fef3f2 5px,#fde8e6 5px,#fde8e6 10px);color:#b42318;font-size:11px;font-weight:600}
+.edited{font-size:12px;color:var(--warn);background:var(--warnbg);border:1px solid #fedf89;border-radius:999px;padding:2px 9px;margin-left:6px}
 .credit{text-align:center;font-size:11.5px;color:var(--muted);margin:14px 0 0;letter-spacing:.01em}.credit b{font-weight:600;color:#475467}
 .hero .by{font-size:12px;opacity:.7;margin-top:14px}
 .foot{text-align:center;color:var(--soft);font-size:12px;margin-top:10px}
@@ -202,6 +217,20 @@ td.brk span,th.brk span{writing-mode:vertical-rl;transform:rotate(180deg)}
       <div class="field"><span class="lbl">Same subject per day (per class)</span><div class="seg" id="cap"><button data-v="1">1</button><button data-v="2" class="on">Up to 2</button><button data-v="3">Up to 3</button><button data-v="99">Any</button></div></div>
     </div>
     <div class="sep"></div>
+    <label class="toggle"><input type="checkbox" id="balance" checked><span class="sw"></span>Share morning &amp; afternoon periods evenly among teachers</label>
+    <p class="help" id="mornInfo" style="margin:6px 0 0 48px"></p>
+    <div class="sep"></div>
+    <div class="row between">
+      <div><span class="lbl">Teacher not available</span><div class="help">Optional: periods a teacher cannot take (meetings, other duties, part-time)</div></div>
+      <button class="btn" id="avBtn">Mark periods</button>
+    </div>
+    <div id="avPanel" class="hide" style="margin-top:12px">
+      <div class="row" style="margin-bottom:10px"><select id="avTeacher" style="width:auto;min-width:200px"></select><button class="btn ghost" id="avClear">Clear this teacher</button><button class="btn ghost" id="avDone">Done</button></div>
+      <div class="scroll"><table class="avgrid" id="avGrid"></table></div>
+      <p class="help" style="margin:8px 0 0">Tap a period to mark it <b style="color:#b42318">✕ Not available</b>. Tap a day name to mark the whole day.</p>
+    </div>
+    <div class="summary" id="avSummary"></div>
+    <div class="sep"></div>
     <label class="toggle"><input type="checkbox" id="useTime"><span class="sw"></span>Show period timings</label>
     <div class="timing hide" id="timing">
       <div class="field"><span class="lbl">Day starts</span><input type="time" id="tStart" value="09:30"></div>
@@ -223,6 +252,7 @@ td.brk span,th.brk span{writing-mode:vertical-rl;transform:rotate(180deg)}
       <div class="seg" id="viewSeg"><button data-v="class" class="on">Classes</button><button data-v="teacher">Teachers</button><button data-v="load">Workload</button></div>
       <div class="row">
         <select id="pick"></select>
+        <button class="btn hide" id="undo" title="Undo last move">↶ Undo</button>
         <button class="btn" id="regen" title="Generate a different valid arrangement">↻ Another version</button>
         <button class="btn" id="copy" title="Copy what is on screen">Copy</button>
         <button class="btn primary" id="xlsx"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Excel</button>
@@ -285,11 +315,15 @@ function buildProblem(rows) {
   return { classes, teachers, groups, classLoad, teacherLoad, errors, warnings };
 }
 
-function precheck(pb, maxConsec) {
+function precheck(pb, maxConsec, unav) {
   const errs = [];
   // max periods a teacher can take in one day with no run longer than maxConsec
   let perDay = 0; for (let p = 0; p < P; p++) if ((p % (maxConsec + 1)) < maxConsec) perDay++;
   pb.classLoad.forEach((l, c) => { if (l > S) errs.push(`${pb.classes[c]} needs ${l} hours but only ${S} periods exist in a week.`); });
+  if (unav) pb.teacherLoad.forEach((l, t) => {
+    let cap = 0; for (let d = 0; d < D; d++) { let run = 0; for (let p = 0; p < P; p++) { if (unav[t][d * P + p]) { run = 0; continue; } if (run < maxConsec) { cap++; run++; } else run = 0; } }
+    if (cap < perDay * D && l > cap) errs.push(`${pb.teachers[t]} has ${l} hours but, with the periods marked not available, can take at most ${cap}.`);
+  });
   pb.teacherLoad.forEach((l, t) => { if (l > perDay * D) errs.push(`${pb.teachers[t]} has ${l} hours; with at most ${maxConsec} continuous hours the maximum possible is ${perDay * D} per week.`); });
   return errs;
 }
@@ -299,6 +333,9 @@ function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.fl
 class Solver {
   constructor(pb, opts) {
     this.pb = pb; this.maxC = opts.maxConsec; this.cap = opts.subjCap;
+    this.unav = opts.unav || pb.teachers.map(() => new Array(S).fill(false));
+    this.morn = opts.morning || Array.from({length: P}, (_, p) => p < Math.ceil(P / 2));
+    this.frac = this.morn.filter(Boolean).length / P;
     this.best = null; this.bestPlaced = -1; this.done = false; this.solution = null; this.restarts = 0;
     this.total = pb.groups.reduce((a, g) => a + g.count, 0);
   }
@@ -308,6 +345,7 @@ class Solver {
     this.tb = pb.teachers.map(() => new Array(S).fill(0));
     this.sd = {}; pb.groups.forEach(g => { this.sd[g.sk] = new Array(D).fill(0); });
     this.rem = pb.groups.map(g => g.count);
+    this.tm = pb.teachers.map(() => 0); this.tn = pb.teachers.map(() => 0);
     this.placed = 0; this.nodes = 0; this.curCap = cap;
     this.jitter = pb.groups.map(() => Math.random());
   }
@@ -318,7 +356,7 @@ class Solver {
     if (this.sd[g.sk][d] >= this.curCap) return false;
     for (const t of g.ts) {
       const row = this.tb[t];
-      if (row[s]) return false;
+      if (row[s] || this.unav[t][s]) return false;
       let run = 1;
       for (let q = p - 1; q >= 0 && row[d * P + q]; q--) run++;
       for (let q = p + 1; q < P && row[d * P + q]; q++) run++;
@@ -329,7 +367,8 @@ class Solver {
   set(gi, s, v) {
     const g = this.pb.groups[gi];
     this.cg[g.c][s] = v ? gi : -1;
-    for (const t of g.ts) this.tb[t][s] += v ? 1 : -1;
+    const mo = this.morn[s % P] ? 1 : 0;
+    for (const t of g.ts) { this.tb[t][s] += v ? 1 : -1; this.tn[t] += v ? 1 : -1; this.tm[t] += v ? mo : -mo; }
     this.sd[g.sk][(s / P) | 0] += v ? 1 : -1;
     this.rem[gi] += v ? -1 : 1; this.placed += v ? 1 : -1;
   }
@@ -350,8 +389,12 @@ class Solver {
     const sd = this.sd[g.sk];
     const sc = bo.map(s => {
       const d = (s / P) | 0;
-      let tl = 0; for (const t of g.ts) for (let p = 0; p < P; p++) tl += this.tb[t][d * P + p];
-      return [s, sd[d] * 10 + tl * 1.5 + Math.random() * 3];
+      let tl = 0, bal = 0; const mo = this.morn[s % P] ? 1 : 0;
+      for (const t of g.ts) {
+        for (let p = 0; p < P; p++) tl += this.tb[t][d * P + p];
+        bal += Math.abs(this.tm[t] + mo - this.frac * (this.tn[t] + 1));
+      }
+      return [s, sd[d] * 10 + tl * 1.5 + bal * 3 + Math.random() * 3];
     }).sort((a, b) => a[1] - b[1]);
     for (const [s] of sc) {
       this.set(bg, s, true);
@@ -372,23 +415,88 @@ class Solver {
   }
 }
 
-function verify(pb, cg, maxC) {
+function verify(pb, cg, maxC, unav) {
   const tb = pb.teachers.map(() => new Array(S).fill(null));
-  const clashes = [], longRuns = [];
+  const clashes = [], longRuns = [], unavHits = [];
   cg.forEach((row, c) => row.forEach((gi, s) => {
     if (gi < 0) return;
     pb.groups[gi].ts.forEach(t => {
       if (tb[t][s] !== null) clashes.push(`${pb.teachers[t]}: ${DAYS[(s / P) | 0]} P${s % P + 1}`);
+      if (unav && unav[t][s]) unavHits.push(`${pb.teachers[t]}: ${DAYS[(s / P) | 0]} P${s % P + 1}`);
       tb[t][s] = c;
     });
   }));
   tb.forEach((row, t) => {
     for (let d = 0; d < D; d++) { let run = 0; for (let p = 0; p < P; p++) { run = row[d * P + p] !== null ? run + 1 : 0; if (run > maxC) { longRuns.push(`${pb.teachers[t]} on ${DAYS[d]}`); break; } } }
   });
-  return { clashes, longRuns, tb };
+  return { clashes, longRuns, unavHits, tb };
 }
 
-if (typeof module !== 'undefined') module.exports = { buildProblem, precheck, Solver, verify, DAYS, P, D, S };
+// ---------- Board: checked swaps (manual moves + balancing) ----------
+class Board {
+  constructor(pb, cg, opts) {
+    this.pb = pb; this.cg = cg; this.maxC = opts.maxConsec; this.cap = opts.cap;
+    this.unav = opts.unav; this.morn = opts.morning;
+    this.tb = pb.teachers.map(() => new Array(S).fill(0));
+    cg.forEach(row => row.forEach((gi, s) => { if (gi >= 0) pb.groups[gi].ts.forEach(t => this.tb[t][s]++); }));
+  }
+  ts(gi) { return gi >= 0 ? this.pb.groups[gi].ts : []; }
+  runOk(t, d) { let run = 0; for (let p = 0; p < P; p++) { run = this.tb[t][d * P + p] ? run + 1 : 0; if (run > this.maxC) return false; } return true; }
+  move(c, s1, s2) {
+    const a = this.cg[c][s1], b = this.cg[c][s2];
+    this.ts(a).forEach(t => { this.tb[t][s1]--; this.tb[t][s2]++; });
+    this.ts(b).forEach(t => { this.tb[t][s2]--; this.tb[t][s1]++; });
+    this.cg[c][s1] = b; this.cg[c][s2] = a;
+  }
+  // '' when swapping the two periods keeps every rule, otherwise the reason
+  check(c, s1, s2) {
+    if (s1 === s2) return 'Same period';
+    const a = this.cg[c][s1], b = this.cg[c][s2], pb = this.pb;
+    if (a === b) return 'Same subject — nothing changes';
+    const T = pb.teachers, lbl = s => `${DAYS[(s / P) | 0]} period ${s % P + 1}`;
+    const into = (gi, to, other) => {
+      for (const t of this.ts(gi)) {
+        if (this.unav[t][to]) return `${T[t]} is not available on ${lbl(to)}`;
+        const self = this.ts(other).includes(t) ? 1 : 0;
+        if (this.tb[t][to] - self > 0) return `${T[t]} is teaching another class on ${lbl(to)}`;
+      }
+      return '';
+    };
+    let r = into(a, s2, b) || into(b, s1, a);
+    if (r) return r;
+    this.move(c, s1, s2);
+    const days = new Set([(s1 / P) | 0, (s2 / P) | 0]);
+    outer: for (const t of new Set([...this.ts(a), ...this.ts(b)])) for (const d of days) if (!this.runOk(t, d)) { r = `${T[t]} would teach more than ${this.maxC} hours continuously`; break outer; }
+    if (!r && this.cap < 99) outer2: for (const d of days) {
+      const cnt = {};
+      for (let p = 0; p < P; p++) { const gi = this.cg[c][d * P + p]; if (gi >= 0) { const k = pb.groups[gi].subj; cnt[k] = (cnt[k] || 0) + 1; if (cnt[k] > this.cap) { r = `${k} would come more than ${this.cap} times on ${DAYS[d]}`; break outer2; } } }
+    }
+    this.move(c, s2, s1);
+    return r;
+  }
+  imbalance(t) {
+    let m = 0, n = 0; for (let s = 0; s < S; s++) if (this.tb[t][s]) { n++; if (this.morn[s % P]) m++; }
+    return Math.abs(m - this.morn.filter(Boolean).length / P * n);
+  }
+  // swap periods within classes to even out each teacher's morning / afternoon share
+  balance(iters) {
+    const C = this.cg.length; if (!C || this.morn.every(Boolean) || !this.morn.some(Boolean)) return;
+    for (let i = 0; i < iters; i++) {
+      const c = (Math.random() * C) | 0, s1 = (Math.random() * S) | 0, s2 = (Math.random() * S) | 0;
+      if (this.morn[s1 % P] === this.morn[s2 % P]) continue;
+      const a = this.cg[c][s1], b = this.cg[c][s2]; if (a === b) continue;
+      const tt = new Set([...this.ts(a), ...this.ts(b)]);
+      let before = 0; tt.forEach(t => before += this.imbalance(t));
+      if (this.check(c, s1, s2)) continue;
+      this.move(c, s1, s2);
+      let after = 0; tt.forEach(t => after += this.imbalance(t));
+      if (after > before + 1e-9) this.move(c, s2, s1);
+    }
+  }
+}
+
+// export
+if (typeof module !== 'undefined') module.exports = { buildProblem, precheck, Solver, verify, Board, configure, DAYS, P, D, S };
 
 </script>
 <script>
@@ -529,6 +637,51 @@ $('clear').onclick = () => { $('data').value=''; $('inmsg').innerHTML=''; $('sum
 ['inst','ttitle'].forEach(id=>{ const v=store.get(id); if(v) $(id).value=v; $(id).addEventListener('input',()=>{store.set(id,$(id).value); if(state) renderView();}); });
 { const d=store.get('data'); if(d) { $('data').value=d; updateSummary(); } }
 
+// ---------- teacher availability ----------
+let unavMap = {}; try { unavMap = JSON.parse(store.get('unav') || '{}') || {}; } catch (e) {}
+function saveUnav(){ store.set('unav', JSON.stringify(unavMap)); }
+function currentTeachers(){
+  const rows = rowsFromGrid(gridFromText($('data').value)).filter(r=>r.teacher);
+  return [...new Set(rows.flatMap(r=>splitTeachers(r.teacher)))];
+}
+function drawAvSummary(){
+  const keys = Object.keys(unavMap).filter(k => (unavMap[k]||[]).some(x => +x.split('-')[1] < cfg.periods));
+  $('avSummary').innerHTML = keys.map(k => { const n = unavMap[k].filter(x => +x.split('-')[1] < cfg.periods).length; return `<span class="chip">✕ ${esc(k)}: ${n} period${n>1?'s':''}</span>`; }).join('');
+}
+function drawAvGrid(){
+  const t = $('avTeacher').value; if (!t) { $('avGrid').innerHTML = '<tr><td class="help">Add your subjects and teachers in step 1 first.</td></tr>'; return; }
+  const set = new Set(unavMap[t] || []);
+  let h = '<thead><tr><th style="width:90px"></th>' + Array.from({length:cfg.periods},(_,p)=>`<th>P${p+1}</th>`).join('') + '</tr></thead><tbody>';
+  ALL_DAYS.slice(0,5).forEach((d,di)=>{ h += `<tr><th class="dayb" data-d="${di}">${d.slice(0,3)}</th>` + Array.from({length:cfg.periods},(_,p)=>{ const x=set.has(di+'-'+p); return `<td><button data-k="${di}-${p}" class="${x?'x':''}">${x?'✕':''}</button></td>`; }).join('') + '</tr>'; });
+  $('avGrid').innerHTML = h + '</tbody>';
+}
+$('avBtn').onclick = () => {
+  const ts = currentTeachers(); const cur = $('avTeacher').value;
+  $('avTeacher').innerHTML = ts.length ? ts.map(t=>`<option>${esc(t)}</option>`).join('') : '<option value="">No teachers yet</option>';
+  if (ts.includes(cur)) $('avTeacher').value = cur;
+  $('avPanel').classList.toggle('hide'); drawAvGrid();
+};
+$('avDone').onclick = () => $('avPanel').classList.add('hide');
+$('avTeacher').onchange = drawAvGrid;
+$('avClear').onclick = () => { delete unavMap[$('avTeacher').value]; saveUnav(); drawAvGrid(); drawAvSummary(); };
+$('avGrid').onclick = e => {
+  const t = $('avTeacher').value; if (!t) return;
+  const set = new Set(unavMap[t] || []);
+  const b = e.target.closest('button[data-k]'), dh = e.target.closest('th[data-d]');
+  if (b) { const k=b.dataset.k; set.has(k)?set.delete(k):set.add(k); }
+  else if (dh) { const d=dh.dataset.d, ks=Array.from({length:cfg.periods},(_,p)=>d+'-'+p), all=ks.every(k=>set.has(k)); ks.forEach(k=> all?set.delete(k):set.add(k)); }
+  else return;
+  if (set.size) unavMap[t] = [...set]; else delete unavMap[t];
+  saveUnav(); drawAvGrid(); drawAvSummary();
+};
+function unavFor(pb){ return pb.teachers.map(t => { const a = new Array(S).fill(false); (unavMap[t]||[]).forEach(k => { const [d,p] = k.split('-').map(Number); if (p < P && d < D) a[d*P+p] = true; }); return a; }); }
+function morningArr(){ const brk = $('useTime').checked ? +$('tBrk').value : 0; const n = brk > 0 ? brk : Math.ceil(cfg.periods/2); return Array.from({length:cfg.periods}, (_,p) => p < n); }
+function drawMornInfo(){ const m = morningArr().filter(Boolean).length; $('mornInfo').textContent = `Morning = periods 1–${m}${$('useTime').checked && +$('tBrk').value>0 ? ' (before the break)' : ''}, afternoon = periods ${m+1}–${cfg.periods}. Each teacher gets a fair share of both.`; }
+['useTime','tBrk'].forEach(id => $(id).addEventListener('change', drawMornInfo));
+$('pMinus').addEventListener('click', ()=>{ drawMornInfo(); drawAvSummary(); if(!$('avPanel').classList.contains('hide')) drawAvGrid(); });
+$('pPlus').addEventListener('click', ()=>{ drawMornInfo(); drawAvSummary(); if(!$('avPanel').classList.contains('hide')) drawAvGrid(); });
+drawMornInfo(); drawAvSummary();
+
 // ---------- timings ----------
 function timeLabels(){
   if(!$('useTime').checked) return null;
@@ -548,12 +701,13 @@ function generate(){
   if(!rows.length){ $('inmsg').innerHTML = '<div class="msg bad">Add your subjects first — upload an Excel file, paste rows, or try an example.</div>'; $('data').scrollIntoView({behavior:'smooth',block:'center'}); return; }
   configure(cfg.days.map(i=>ALL_DAYS[i]), cfg.periods);
   const pb = buildProblem(rows);
-  const errs = precheck(pb, cfg.maxC);
+  const unav = unavFor(pb), morning = morningArr();
+  const errs = precheck(pb, cfg.maxC, unav);
   let h = '';
   if(pb.warnings.length) h += `<div class="msg warn">${pb.warnings.length} row(s) skipped:<ul>${pb.warnings.slice(0,8).map(w=>`<li>${esc(w)}</li>`).join('')}</ul></div>`;
   if(errs.length){ h += `<div class="msg bad"><b>This can’t be scheduled with the current settings:</b><ul>${errs.map(e=>`<li>${esc(e)}</li>`).join('')}</ul>Add a working day or period, or reduce those hours.</div>`; $('inmsg').innerHTML = h; $('inmsg').scrollIntoView({behavior:'smooth',block:'center'}); return; }
   $('inmsg').innerHTML = h;
-  const solver = new Solver(pb, {maxConsec:cfg.maxC, subjCap:cfg.cap});
+  const solver = new Solver(pb, {maxConsec:cfg.maxC, subjCap:cfg.cap, unav, morning});
   running = true; $('gen').disabled = true; $('regen').disabled = true;
   $('prog').classList.remove('hide'); const bar = $('prog').firstElementChild;
   const MAX = 1500, t0 = performance.now();
@@ -565,7 +719,11 @@ function generate(){
     if(solver.done || solver.restarts >= MAX){
       running = false; $('gen').disabled = false; $('regen').disabled = false; $('prog').classList.add('hide');
       $('status').textContent = solver.done ? `Generated in ${((performance.now()-t0)/1000).toFixed(1)} seconds` : 'Could not place every hour — see details below';
-      state = {pb, maxC:cfg.maxC, cap:cfg.cap, cg: solver.done ? solver.solution : solver.best, solved: solver.done, relaxed: solver.relaxedUsed, total: solver.total, times: timeLabels(), brk: $('useTime').checked ? +$('tBrk').value : 0, days: DAYS.slice()};
+      const cg = solver.done ? solver.solution : solver.best;
+      const board = new Board(pb, cg, {maxConsec:cfg.maxC, cap: solver.relaxedUsed ? cfg.cap+1 : cfg.cap, unav, morning});
+      if (solver.done && $('balance').checked) board.balance(40000);
+      state = {pb, maxC:cfg.maxC, cap:cfg.cap, cg: board.cg, board, unav, morning, solved: solver.done, relaxed: solver.relaxedUsed, total: solver.total, times: timeLabels(), brk: $('useTime').checked ? +$('tBrk').value : 0, days: DAYS.slice(), edited:false};
+      pick = null; undoStack = [];
       fillPick(); render(); if(solver.done) logTimetable(state);
       $('out').classList.remove('hide'); $('out').scrollIntoView({behavior:'smooth', block:'start'});
     } else setTimeout(tick, 0);
@@ -573,8 +731,8 @@ function generate(){
   setTimeout(tick, 0);
 }
 $('gen').onclick = generate; $('regen').onclick = generate;
-$('viewSeg').onclick = e => { const b=e.target.closest('button'); if(!b) return; view=b.dataset.v; $('viewSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); fillPick(); renderView(); };
-$('pick').onchange = renderView;
+$('viewSeg').onclick = e => { const b=e.target.closest('button'); if(!b) return; view=b.dataset.v; pick=null; $('viewSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); fillPick(); renderView(); };
+$('pick').onchange = () => { pick = null; renderView(); };
 
 function fillPick(){
   if(!state) return;
@@ -591,10 +749,11 @@ const cross = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" strok
 
 function render(){
   const {pb, cg, maxC, solved, relaxed, total} = state;
-  const v = verify(pb, cg, maxC); state.v = v;
+  const v = verify(pb, cg, maxC, state.unav); state.v = v;
+  $('undo').classList.toggle('hide', !undoStack.length);
   const placed = cg.reduce((a,r)=>a+r.filter(x=>x>=0).length,0);
   const chk = (ok, txt) => `<div class="check ${ok?'':'no'}"><span class="dot">${ok?tick:cross}</span><span>${txt}</span></div>`;
-  let h = `<div class="checks">${chk(solved, solved?`All ${total} hours scheduled`:`${placed} of ${total} hours scheduled`)}${chk(!v.clashes.length,'No teacher in two classes at once')}${chk(!v.longRuns.length,`No teacher over ${maxC} continuous hour${maxC>1?'s':''}`)}</div>`;
+  let h = `<div class="checks">${chk(solved, solved?`All ${total} hours scheduled`:`${placed} of ${total} hours scheduled`)}${chk(!v.clashes.length,'No teacher in two classes at once')}${chk(!v.longRuns.length,`No teacher over ${maxC} continuous hour${maxC>1?'s':''}`)}${state.unav.some(a=>a.some(Boolean)) ? chk(!v.unavHits.length,'Teacher unavailable periods kept free') : ''}</div>`;
   if(solved && relaxed) h += `<div class="msg warn">To fit everything, a subject comes ${state.cap+1} times on some days (one more than your setting).</div>`;
   if(!solved){
     const left = pb.groups.map((g,gi)=>({g, n: g.count - cg[g.c].filter(x=>x===gi).length})).filter(x=>x.n>0);
@@ -603,7 +762,7 @@ function render(){
   const slots = pb.classes.length*S;
   h += `<div class="kpis"><div class="kpi"><b>${pb.classes.length}</b><span>Classes</span></div><div class="kpi"><b>${pb.teachers.length}</b><span>Teachers</span></div><div class="kpi"><b>${placed}</b><span>Hours placed</span></div><div class="kpi"><b>${slots-placed}</b><span>Free periods</span></div></div>`;
   $('checks').innerHTML = h;
-  $('outSub').textContent = `${state.days.length} days × ${P} periods · ${pb.classes.length} classes · ${pb.teachers.length} teachers`;
+  $('outSub').innerHTML = `${state.days.length} days × ${P} periods · ${pb.classes.length} classes · ${pb.teachers.length} teachers` + (state.edited ? '<span class="edited">Edited by hand</span>' : '');
   renderView();
 }
 
@@ -629,27 +788,63 @@ function renderView(){
   if(!state) return;
   const {pb, cg, v} = state, sel = +$('pick').value; let h = docTitle();
   if(view === 'class'){
+    h += `<p class="tip">✋ <b>To move a period:</b> tap it, then tap where it should go — <span style="color:#067647;font-weight:600">green</span> spots keep every rule. On a computer you can also drag and drop.</p>`;
+    let okSet = null;
+    if (pick && state.solved !== undefined) { okSet = new Set(); for (let s=0;s<S;s++) if (s!==pick.s && !state.board.check(pick.c, pick.s, s)) okSet.add(s); }
     pb.classes.forEach((cn, c) => { if(sel>=0 && sel!==c) return;
-      h += grid(cn, `${cg[c].filter(x=>x>=0).length} hrs / week`, s => { const gi=cg[c][s]; if(gi<0) return '<td class="free">Free</td>';
-        const g=pb.groups[gi]; return `<td class="cell"><div class="slot" style="${slotStyle(g.subj)}"><div class="s">${esc(g.subj)}</div><div class="t">${esc(g.ts.map(t=>pb.teachers[t]).join(' / '))}</div></div></td>`; });
+      h += grid(cn, `${cg[c].filter(x=>x>=0).length} hrs / week`, s => {
+        const gi=cg[c][s];
+        let cls = '';
+        if (pick && pick.c===c) cls = s===pick.s ? ' selC' : okSet.has(s) ? ' okT' : ' noT';
+        const da = `data-c="${c}" data-s="${s}" draggable="true"`;
+        if(gi<0) return `<td class="free${cls}" ${da}>Free</td>`;
+        const g=pb.groups[gi]; return `<td class="cell${cls}" ${da}><div class="slot" style="${slotStyle(g.subj)}"><div class="s">${esc(g.subj)}</div><div class="t">${esc(g.ts.map(t=>pb.teachers[t]).join(' / '))}</div></div></td>`; });
     });
   } else if(view === 'teacher'){
+    h += `<p class="tip">To move periods, switch to <b>Classes</b>. Shaded red = teacher not available.</p>`;
     pb.teachers.forEach((tn, t) => { if(sel>=0 && sel!==t) return;
-      h += grid(tn, `${pb.teacherLoad[t]} hrs / week`, s => { const c=v.tb[t][s]; if(c===null) return '<td class="free">—</td>';
+      h += grid(tn, `${pb.teacherLoad[t]} hrs / week`, s => { const c=v.tb[t][s]; if(c===null) return state.unav[t][s] ? '<td class="na">Not available</td>' : '<td class="free">—</td>';
         const g=pb.groups[cg[c][s]]; return `<td class="cell"><div class="slot" style="${slotStyle(g.subj)}"><div class="s">${esc(pb.classes[c])}</div><div class="t">${esc(g.subj)}</div></div></td>`; });
     });
   } else {
     const max = Math.max(...pb.teacherLoad, 1);
-    h += `<div class="scroll"><table class="load"><thead><tr><th style="text-align:left">Teacher</th>${DAYS.map(d=>`<th>${d.slice(0,3)}</th>`).join('')}<th>Total</th><th>Longest run</th><th style="min-width:100px">Load</th></tr></thead><tbody>`;
+    h += `<div class="scroll"><table class="load"><thead><tr><th style="text-align:left">Teacher</th>${DAYS.map(d=>`<th>${d.slice(0,3)}</th>`).join('')}<th>Total</th><th>Morning</th><th>Afternoon</th><th>Longest run</th><th style="min-width:100px">Load</th></tr></thead><tbody>`;
     pb.teachers.forEach((tn, t) => {
-      let tot=0, longest=0; const per=[];
-      for(let d=0; d<D; d++){ let n=0, run=0; for(let p=0;p<P;p++){ if(v.tb[t][d*P+p]!==null){n++;run++;longest=Math.max(longest,run);} else run=0; } per.push(n); tot+=n; }
-      h += `<tr><th>${esc(tn)}</th>${per.map(n=>`<td>${n||'<span style="color:#c0c5d0">0</span>'}</td>`).join('')}<td><b>${tot}</b></td><td>${longest} hr</td><td><div class="bar-in"><i style="width:${tot/max*100}%"></i></div></td></tr>`;
+      let tot=0, longest=0, mo=0; const per=[];
+      for(let d=0; d<D; d++){ let n=0, run=0; for(let p=0;p<P;p++){ if(v.tb[t][d*P+p]!==null){n++;run++;longest=Math.max(longest,run); if(state.morning[p]) mo++;} else run=0; } per.push(n); tot+=n; }
+      h += `<tr><th>${esc(tn)}</th>${per.map(n=>`<td>${n||'<span style="color:#c0c5d0">0</span>'}</td>`).join('')}<td><b>${tot}</b></td><td>${mo}</td><td>${tot-mo}</td><td>${longest} hr</td><td><div class="bar-in"><i style="width:${tot/max*100}%"></i></div></td></tr>`;
     });
     h += '</tbody></table></div>';
   }
   $('view').innerHTML = h;
 }
+
+// ---------- move periods (tap or drag) ----------
+let pick = null, sel = null, undoStack = [];
+function doMove(c, s1, s2){
+  const r = state.board.check(c, s1, s2);
+  if (r) { toast(r); return false; }
+  state.board.move(c, s1, s2); undoStack.push([c, s1, s2]); state.edited = true; pick = null;
+  render(); toast('Moved ✓'); return true;
+}
+$('view').addEventListener('click', e => {
+  if (view !== 'class' || !state) return;
+  const td = e.target.closest('td[data-s]'); if (!td) return;
+  const c = +td.dataset.c, s = +td.dataset.s;
+  if (!pick || pick.c !== c) { pick = {c, s}; renderView(); return; }
+  if (pick.s === s) { pick = null; renderView(); return; }
+  doMove(c, pick.s, s);
+});
+$('view').addEventListener('dragstart', e => {
+  const td = e.target.closest('td[data-s]'); if (!td || view !== 'class') return;
+  pick = {c:+td.dataset.c, s:+td.dataset.s};
+  try { e.dataTransfer.setData('text/plain', td.dataset.c+','+td.dataset.s); e.dataTransfer.effectAllowed = 'move'; } catch (_) {}
+  setTimeout(renderView, 0);
+});
+$('view').addEventListener('dragover', e => { const td = e.target.closest('td[data-s]'); if (td && pick && +td.dataset.c === pick.c) { e.preventDefault(); document.querySelectorAll('.dragover').forEach(x=>x.classList.remove('dragover')); td.classList.add('dragover'); } });
+$('view').addEventListener('drop', e => { e.preventDefault(); const td = e.target.closest('td[data-s]'); if (!td || !pick) return; const c=+td.dataset.c, s=+td.dataset.s; if (c===pick.c && s!==pick.s) doMove(c, pick.s, s); else { pick=null; renderView(); } });
+$('view').addEventListener('dragend', () => { document.querySelectorAll('.dragover').forEach(x=>x.classList.remove('dragover')); });
+$('undo').onclick = () => { const m = undoStack.pop(); if (!m) return; state.board.move(m[0], m[2], m[1]); state.edited = undoStack.length > 0; pick = null; render(); toast('Undone'); };
 
 // ---------- copy for Excel ----------
 $('copy').onclick = () => {
@@ -817,7 +1012,7 @@ function ttBlock(sh, name, meta, cellFn){
   sh.add([]);
 }
 const classCell = c => s => { const gi = state.cg[c][s]; if (gi<0) return ['Free', ST.free]; const g = state.pb.groups[gi]; return [`${g.subj}\n${g.ts.map(t=>state.pb.teachers[t]).join(' / ')}`, slotSt(g.subj)]; };
-const teacherCell = t => s => { const c = state.v.tb[t][s]; if (c===null) return ['—', ST.free]; const g = state.pb.groups[state.cg[c][s]]; return [`${state.pb.classes[c]}\n${g.subj}`, slotSt(g.subj)]; };
+const teacherCell = t => s => { const c = state.v.tb[t][s]; if (c===null) return state.unav[t][s] ? ['Not available', {...ST.free, font:{sz:9, color:{rgb:'B42318'}}, fill:{fgColor:{rgb:'FEF3F2'}}}] : ['—', ST.free]; const g = state.pb.groups[state.cg[c][s]]; return [`${state.pb.classes[c]}\n${g.subj}`, slotSt(g.subj)]; };
 
 function buildWorkbook(){
   const {pb, cg, v} = state, wb = XLSX.utils.book_new(), cols = ttCols(), ncol = cols.length, used = new Set();
@@ -829,11 +1024,11 @@ function buildWorkbook(){
   pb.teachers.forEach((tn,t)=> ttBlock(sh, tn, `${pb.teacherLoad[t]} hrs/week`, teacherCell(t)));
   docFooter(sh, ncol); XLSX.utils.book_append_sheet(wb, sh.build(cols), sname('All Teachers'));
   // workload
-  const wc = [24, ...DAYS.map(()=>8), 9, 16]; sh = new XSheet(); docHeader(sh, wc.length);
-  sh.add(['Teacher', ...DAYS.map(d=>d.slice(0,3)), 'Total', 'Longest continuous'], ST.head, {h:20});
-  pb.teachers.forEach((tn,t)=>{ let tot=0, longest=0; const per=[];
-    for (let d=0; d<D; d++){ let n=0, run=0; for (let p=0;p<P;p++){ if (v.tb[t][d*P+p]!==null){ n++; run++; longest=Math.max(longest,run);} else run=0; } per.push(n); tot+=n; }
-    sh.add([tn, ...per, tot, `${longest} hr`], c => c===0 ? ST.day : c===per.length+1 ? ST.numB : ST.num, {h:18}); });
+  const wc = [24, ...DAYS.map(()=>8), 9, 10, 11, 16]; sh = new XSheet(); docHeader(sh, wc.length);
+  sh.add(['Teacher', ...DAYS.map(d=>d.slice(0,3)), 'Total', 'Morning', 'Afternoon', 'Longest continuous'], ST.head, {h:20});
+  pb.teachers.forEach((tn,t)=>{ let tot=0, longest=0, mo=0; const per=[];
+    for (let d=0; d<D; d++){ let n=0, run=0; for (let p=0;p<P;p++){ if (v.tb[t][d*P+p]!==null){ n++; run++; longest=Math.max(longest,run); if (state.morning[p]) mo++; } else run=0; } per.push(n); tot+=n; }
+    sh.add([tn, ...per, tot, mo, tot-mo, `${longest} hr`], c => c===0 ? ST.day : c===per.length+1 ? ST.numB : ST.num, {h:18}); });
   docFooter(sh, wc.length); XLSX.utils.book_append_sheet(wb, sh.build(wc), sname('Workload'));
   // one sheet per class
   pb.classes.forEach((cn,c)=>{ const s = new XSheet(); docHeader(s, ncol); ttBlock(s, cn, `${cg[c].filter(x=>x>=0).length} hrs/week`, classCell(c)); docFooter(s, ncol); XLSX.utils.book_append_sheet(wb, s.build(cols), sname(cn)); });
