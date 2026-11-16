@@ -191,6 +191,15 @@ table.master th.mcls{background:#fcfcfd;font-size:12.5px;white-space:normal}
 table.master tbody{border-top:3px solid #c7cbf5}
 table.master tbody tr:first-child>*{border-top:3px solid #c7cbf5}
 table.master tbody.odd td.free{background:#fcfcfd}
+table.master.compact{min-width:620px}
+table.master.compact thead th:nth-child(1){width:92px}table.master.compact thead th:nth-child(2){width:70px}
+table.master.compact th.mday,table.master.compact th.mcls{background:#dddddd;color:#18202f;text-align:center;font-weight:700}
+td.cc{font-size:12.5px;font-weight:500;padding:9px 4px;border:1px solid #c9ccd6;white-space:nowrap;color:#18202f}
+td.cc.lab{font-weight:800}td.cc.com{font-style:italic;color:#475467}td.cc.free{background:#fff}
+td.cc.selC{outline:3px solid var(--brand);outline-offset:-3px}td.cc.okT{box-shadow:inset 0 0 0 3px #12b76a}td.cc.noT{opacity:.35}
+.legend{margin-top:16px}.lg-h{font-weight:700;font-size:13px;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.04em;color:#344054}
+.lg-t{display:flex;flex-wrap:wrap;gap:6px}.lg-t span{font-size:12.5px;padding:5px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.08)}
+table.key{font-size:12.5px;min-width:520px}table.key th,table.key td{text-align:left;padding:6px 8px}
 .credit{text-align:center;font-size:11.5px;color:var(--muted);margin:14px 0 0;letter-spacing:.01em}.credit b{font-weight:600;color:#475467}
 .hero .by{font-size:12px;opacity:.7;margin-top:14px}
 .foot{text-align:center;color:var(--soft);font-size:12px;margin-top:10px}
@@ -243,7 +252,8 @@ table.master tbody.odd td.free{background:#fcfcfd}
     <div class="card-h"><div class="step">2</div><div><h2>Settings</h2><p>Monday to Friday (no classes on Saturday or Sunday) · 5 periods a day by default</p></div></div>
     <div class="grid2">
       <div class="field"><span class="lbl">Institution / heading</span><input type="text" id="inst" placeholder="e.g. St. Mary's Higher Secondary School"></div>
-      <div class="field"><span class="lbl">Timetable title</span><input type="text" id="ttitle" placeholder="e.g. Timetable 2026–27, Odd Semester"></div>
+      <div class="field"><span class="lbl">Department (optional)</span><input type="text" id="dept" placeholder="e.g. PG &amp; Research Department of Commerce"></div>
+      <div class="field"><span class="lbl">Timetable title</span><input type="text" id="ttitle" placeholder="e.g. Time Table – Even Semester 2026-27"></div>
     </div>
     <div class="sep"></div>
     <div class="grid2">
@@ -328,10 +338,14 @@ table.master tbody.odd td.free{background:#fcfcfd}
           <tr><td>Class</td><td>Class / batch code — same spelling in every row</td><td>1K, 2K, 3K</td></tr>
           <tr><td>Subject</td><td>Paper / course name</td><td>Corporate Accounting</td></tr>
           <tr><td>Teacher</td><td>Initials or name — same spelling everywhere</td><td>SK</td></tr>
-          <tr><td>Allotted hrs</td><td>Periods this paper gets each week</td><td>5</td></tr></table>
+          <tr><td>Allotted hrs</td><td>Periods this paper gets each week</td><td>5</td></tr>
+          <tr><td>Code <i>(optional)</i></td><td>Short subject code for the timetable; blank = made automatically</td><td>SAI</td></tr>
+          <tr><td>Teacher name <i>(optional)</i></td><td>Full name for the teacher legend, once per teacher</td><td>Dr. Anitha Thomas</td></tr></table>
         <ul><li><b>One paper split between two teachers</b> (e.g. Business and Taxation Laws: SB 2 hrs, JJ 3 hrs): use two rows. <b>Both teaching together</b> (labs): write <i>JJ / ETJ</i> in one row.</li>
           <li><b>Spelling matters:</b> <i>AJJ</i> and <i>A.J.J</i> count as two teachers.</li>
           <li>A class can have at most 25 hours a week (5 days × 5 periods); a teacher at most 4 periods a day.</li>
+          <li><b>Common slots</b> (AEC, MDC, VAC): subject only, Teacher blank or <i>-</i>. They appear in grey italics.</li>
+          <li><b>Labs:</b> include “Lab” in the subject name; lab hours appear in bold.</li>
           <li>Put all departments that share teachers in one file, so shared teachers never clash.</li>
           <li>The template's <b>Example (College)</b> sheet shows a filled sample (1K–5K); tap <b>College example</b> in Step 1 to try it in the app.</li></ul>
       </details>
@@ -364,7 +378,7 @@ table.master tbody.odd td.free{background:#fcfcfd}
 
       <details><summary><span>6</span>Generate and read the timetable</summary>
         <p>Tap <b>Generate timetable</b> — usually ready in 1–3 seconds. Green ticks confirm every rule.</p>
-        <ul><li><b>All classes:</b> the master timetable — every class, Monday to Friday, in one table (also the first sheet of the Excel file).</li><li><b>Classes:</b> each class's week, subject with teacher; <i>Free</i> for empty periods.</li>
+        <ul><li><b>All classes:</b> the master timetable in the same layout as the Excel <b>Colour</b> sheet, with the teacher legend and subject key below.</li><li><b>Classes:</b> each class's week, subject with teacher; <i>Free</i> for empty periods.</li>
           <li><b>Teachers:</b> each teacher's week; <i>Not available</i> in red.</li>
           <li><b>Workload:</b> hours per day (with limit, e.g. 3 /4), total, morning, afternoon, longest run.</li></ul>
         <p>Tap <b>↻ Another version</b> for a different valid arrangement.</p>
@@ -378,8 +392,13 @@ table.master tbody.odd td.free{background:#fcfcfd}
       </details>
 
       <details><summary><span>8</span>Download the Excel timetable</summary>
-        <p><b>Download Excel</b> gives one colour-coded workbook: <b>Master Timetable</b> (all classes in one table), <b>All Classes</b>, <b>All Teachers</b>, <b>Workload</b>, and one sheet per class — each with your college name, title and date.</p>
-        <p><b>To print:</b> in Excel choose Page Layout → Landscape → Fit to 1 page wide. <b>Copy</b> copies the screen view to paste into Excel or Google Sheets.</p>
+        <p><b>Download Excel</b> gives a compact, print-ready workbook in the standard college format:</p>
+        <ul><li><b>Colour</b> – Day · Batch · Hour I–V for all classes in one table; each cell is <i>teacher code + subject code</i> (e.g. <i>AT BRF</i>), coloured by teacher; labs bold; common slots grey; teacher legend and subjects-and-teachers key below.</li>
+          <li><b>Black &amp; White</b> – the same, for photocopying.</li>
+          <li><b>Teacher-wise</b> – each teacher's week (e.g. <i>3K – IT2</i>).</li>
+          <li><b>Hours Check</b> – allotted vs. scheduled hours per paper and per teacher, with OK / CHECK formulas.</li></ul>
+        <p>Fill <b>Department</b>, <b>Institution</b> and <b>Timetable title</b> in Settings for the three heading lines.</p>
+        <p><b>To print:</b> sheets are already set to fit the page width. <b>Copy</b> copies the screen view to paste into Excel or Google Sheets.</p>
       </details>
 
       <details><summary><span>9</span>Troubleshooting</summary>
@@ -422,26 +441,66 @@ function splitTeachers(t) {
   return String(t).split(/\s*(?:\/|,|&|\+|;|\band\b)\s*/i).map(x => x.trim()).filter(Boolean);
 }
 
+const COMMON_RE = /^(-+|—|–|na|n\/a|nil|none|common|common slot|tba)$/i;
+const STOP = new Set(['and','of','for','the','in','to','on','with','a','an','&','–','—','-']);
+function romanNum(x) { const m = {I:1,II:2,III:3,IV:4,V:5,VI:6,VII:7,VIII:8}; return m[x.toUpperCase()] || x; }
+// "Business Analytics - II – Lab" -> {code:"BA2", lab:true}; "Accounting Principles and Practice (MDC)" -> "APP (MDC)"
+function autoCode(subj) {
+  let s = String(subj);
+  const lab = /\b(lab|laboratory|practical|practicals)\b/i.test(s);
+  const paren = [...s.matchAll(/\(([^)]*)\)/g)].map(m => m[1].trim()).filter(x => x && !/^(lab|laboratory|practical)s?$/i.test(x));
+  s = s.replace(/\([^)]*\)/g, ' ').replace(/[\s–—-]*\b(lab|laboratory|practicals?)\b/ig, ' ').trim();
+  let num = ''; const m = s.match(/(?:^|[\s–—-])(I{1,3}|IV|VI{0,3}|V|\d{1,2})\s*$/);
+  if (m) { num = String(romanNum(m[1])); s = s.slice(0, m.index); }
+  const words = s.split(/[\s\/,&:–—-]+/).filter(w => w && !STOP.has(w.toLowerCase()));
+  let code = words.length === 1 ? words[0].slice(0, 4).toUpperCase()
+    : words.map(w => /^[A-Z]{2,}$/.test(w) ? w : w[0].toUpperCase()).join('').slice(0, 5);
+  code = (code || 'SUB') + num;
+  if (paren.length) code += ' (' + paren.join(', ') + ')';
+  return { code, lab };
+}
+const TITLES = /^(dr|sr|br|fr|mr|mrs|ms|miss|prof|rev)\.?$/i;
+function teacherCode(name) {
+  const n = String(name).trim();
+  if (n.length <= 5 && !/\s/.test(n)) return n;
+  const w = n.replace(/\./g, ' ').split(/\s+/).filter(x => x && !TITLES.test(x));
+  return (w.map(x => x[0].toUpperCase()).join('') || n.slice(0, 3)).slice(0, 4);
+}
+
 function buildProblem(rows) {
-  // rows: [{cls, subj, teacher, hours}]
+  // rows: [{cls, subj, teacher, hours, code?, tname?}]
   const classes = [], teachers = [], errors = [], warnings = [];
-  const ci = {}, ti = {};
-  const groups = [];
-  const gIndex = {};
+  const ci = {}, ti = {}, tFull = {};
+  const groups = [], gIndex = {};
   rows.forEach((r, i) => {
-    if (!r.cls || !r.subj || !r.teacher) { warnings.push(`Row ${i + 1} skipped (class, subject or teacher missing).`); return; }
+    if (!r.cls || !r.subj) { if (r.cls || r.subj || r.teacher) warnings.push(`Row ${i + 1} skipped (class or subject missing).`); return; }
     const h = Math.round(Number(r.hours));
     if (!(h > 0)) { warnings.push(`Row ${i + 1} (${r.subj}) skipped — hours must be a positive number.`); return; }
     if (!(r.cls in ci)) { ci[r.cls] = classes.length; classes.push(r.cls); }
-    const tids = splitTeachers(r.teacher).map(t => { if (!(t in ti)) { ti[t] = teachers.length; teachers.push(t); } return ti[t]; });
+    const common = !r.teacher || COMMON_RE.test(String(r.teacher).trim());
+    const tids = common ? [] : splitTeachers(r.teacher).map(t => { if (!(t in ti)) { ti[t] = teachers.length; teachers.push(t); } return ti[t]; });
+    if (!common && r.tname) { const parts = splitTeachers(r.tname); tids.forEach((t, k) => { if (parts[k] && !tFull[t]) tFull[t] = parts[k]; }); }
+    const ac = autoCode(r.subj), raw = String(r.subj).trim();
+    const keep = raw.length <= 16 && (common || !/[a-z]/.test(raw.replace(/\([^)]*\)/g, '')));
+    const code = (r.code && String(r.code).trim()) || (keep ? raw : ac.code);
     const key = ci[r.cls] + '|' + r.subj + '|' + tids.join(',');
     if (key in gIndex) groups[gIndex[key]].count += h;
-    else { gIndex[key] = groups.length; groups.push({ c: ci[r.cls], subj: r.subj, ts: tids, count: h, sk: ci[r.cls] + '|' + r.subj }); }
+    else { gIndex[key] = groups.length; groups.push({ c: ci[r.cls], subj: r.subj, ts: tids, count: h, sk: ci[r.cls] + '|' + r.subj, code, lab: ac.lab, common }); }
   });
+  // teacher short codes (unique) and full names
+  const used = {};
+  const tcode = teachers.map(t => { let c = teacherCode(t), k = c, n = 2; while (used[k]) k = c + n++; used[k] = 1; return k; });
+  const tname = teachers.map((t, i) => tFull[i] || t);
+  // unique subject codes within a class
+  const seen = {};
+  const root = x => String(x).replace(/\([^)]*\)/g, ' ').replace(/[\s–—-]*\b(lab|laboratory|practicals?)\b/ig, ' ').trim().toLowerCase();
+  groups.forEach(g => { const base = g.code, k = c => g.c + '|' + c + '|' + g.lab; if (seen[k(base)] && seen[k(base)] !== root(g.subj)) { let n = 2; while (seen[k(base + n)]) n++; g.code = base + n; } seen[k(g.code)] = root(g.subj); });
   const classLoad = classes.map(() => 0), teacherLoad = teachers.map(() => 0);
   groups.forEach(g => { classLoad[g.c] += g.count; g.ts.forEach(t => teacherLoad[t] += g.count); });
-  return { classes, teachers, groups, classLoad, teacherLoad, errors, warnings };
+  return { classes, teachers, tcode, tname, groups, classLoad, teacherLoad, errors, warnings };
 }
+// short timetable label, e.g. "AT BRF", "JJ SAI (LAB)", "AJJ/SK PRJ", "AEC (ENG)"
+function cellLabel(pb, g) { return g.common ? g.code : `${g.ts.map(t => pb.tcode[t]).join('/')} ${g.code}${g.lab ? ' (LAB)' : ''}`; }
 
 function precheck(pb, maxConsec, unav, dayCap) {
   const errs = [];
@@ -663,7 +722,7 @@ class Board {
 }
 
 // export
-if (typeof module !== 'undefined') module.exports = { buildProblem, precheck, Solver, verify, Board, configure, DAYS, P, D, S };
+if (typeof module !== 'undefined') module.exports = { buildProblem, autoCode, cellLabel, teacherCode, precheck, Solver, verify, Board, configure, DAYS, P, D, S };
 
 </script>
 <script>
@@ -694,38 +753,42 @@ Class 9B	Physics	Deepa	3
 Class 9B	Chemistry	Deepa	3
 Class 9B	Hindi	Lakshmi	3
 Class 9B	Physical Education	Thomas	2`,
-college: `Class	Subject	Teacher	Allotted hrs
-1K	Accounting Principles and Practice (MDC)	SRJ	4
-1K	Business Regulatory Framework	AT	5
-1K	Business Analytics and Predictive Techniques	ETJ	3
-1K	Business Analytics and Predictive Techniques – Lab	ETJ	2
-1K	Capital Markets and Investment Management	JJ	5
-2K	Trends and Innovations in Banking	AJJ	4
-2K	Corporate Accounting	SK	5
-2K	Business and Taxation Laws	SB	2
-2K	Quantitative Techniques for Business Decisions	SRJ	5
-2K	Business and Taxation Laws	JJ	3
-3K	Income Tax - II	AJJ	5
-3K	Working Capital Management	SK	1
-3K	Management Accounting and Performance Management	SB	4
-3K	Working Capital Management	SRJ	3
-3K	Cost Accounting Methods	AT	4
-3K	Auditing and Assurance	ETJ	2
-3K	Spreadsheet & AI Tools for Financial Data Analysis – Lab	JJ	5
-3K	Auditing and Assurance	JJ	1
-4K	Indian Ethos in Management	AJJ	2
-4K	Corporate Financial Reporting	SK	5
-4K	Business Environment and Corporate Strategy	SB	5
-4K	Management Optimization Techniques	SRJ	4
-4K	International Business	AT	2
-4K	Management Optimization Techniques	ETJ	1
-4K	International Business	ETJ	3
-4K	Indian Ethos in Management	JJ	3
-5K	Corporate Tax Planning	AJJ	5
-5K	Derivatives and Risk Management	SK	5
-5K	Advanced Cost and Management Accounting	SB	5
-5K	Personal Investment and Behavioural Finance	AT	5
-5K	Business Analytics - II – Lab	ETJ	5`};
+college: `Class	Subject	Teacher	Allotted hrs	Code	Teacher name
+1K	Accounting Principles and Practice (MDC)	SRJ	4		Sr. Jinto John
+1K	Business Regulatory Framework	AT	5		Dr. Anitha Thomas
+1K	Business Analytics and Predictive Techniques	ETJ	3		Eric Thomas Joseph
+1K	Business Analytics and Predictive Techniques – Lab	ETJ	2		
+1K	Capital Markets and Investment Management	JJ	5		Jeena Joy
+2K	Trends and Innovations in Banking	AJJ	4		Dr. Anu Jossy Joy
+2K	Corporate Accounting	SK	5		Dr. Sony Kuriakose
+2K	Business and Taxation Laws	SB	2		Dr. Suby Baby
+2K	Quantitative Techniques for Business Decisions	SRJ	5		
+2K	Business and Taxation Laws	JJ	3		
+3K	Income Tax - II	AJJ	5		
+3K	Working Capital Management	SK	1		
+3K	Management Accounting and Performance Management	SB	4		
+3K	Working Capital Management	SRJ	3		
+3K	Cost Accounting Methods	AT	4		
+3K	Auditing and Assurance	ETJ	2		
+3K	Spreadsheet & AI Tools for Financial Data Analysis – Lab	JJ	5	SAI	
+3K	Auditing and Assurance	JJ	1		
+4K	Indian Ethos in Management	AJJ	2		
+4K	Corporate Financial Reporting	SK	5		
+4K	Business Environment and Corporate Strategy	SB	5		
+4K	Management Optimization Techniques	SRJ	4		
+4K	International Business	AT	2		
+4K	Management Optimization Techniques	ETJ	1		
+4K	International Business	ETJ	3		
+4K	Indian Ethos in Management	JJ	3		
+5K	Corporate Tax Planning	AJJ	5		
+5K	Derivatives and Risk Management	SK	5		
+5K	Advanced Cost and Management Accounting	SB	5		
+5K	Personal Investment and Behavioural Finance	AT	5		
+5K	Business Analytics - II – Lab	ETJ	5		
+1K	AEC (ENG)	-	2		
+1K	AEC OL (H/M)	-	3		
+2K	MDC	-	3		
+2K	VAC	-	3		`};
 const TEMPLATE = 'Class\tSubject\tTeacher\tAllotted hrs\n';
 
 const cfg = {days:[0,1,2,3,4], periods:5, maxC:2, cap:2, dmax:99};
@@ -767,18 +830,22 @@ function rowsFromGrid(grid){
     const c3=find(TEACH_RE), c2=find(/subject|paper|course title|course name|module|topic/), c4=find(/hour|hrs?\b|period|credit|load|allot|per week|weekly|no\.? of|count/);
     let c1=find(/class|sem|batch|grade|std|standard|programme|program|division|section|year|group|course$/);
     if(c1===c2) c1=-1;
-    col = {cls:c1>=0?c1:0, subj:c2>=0?c2:1, teacher:c3, hours:c4};
+    const c5=h.findIndex((c,i)=>i!==c2 && /^(subject )?code$|^code |short|abbr/.test(c.trim())), c6=h.findIndex((c,i)=>i!==c3 && /full name|teacher name|name of (the )?teacher|faculty name/.test(c));
+    col = {cls:c1>=0?c1:0, subj:c2>=0?c2:1, teacher:c3, hours:c4, code:c5, tname:c6};
     grid = grid.slice(hi+1);
   } else if(grid[0].length>3 && isNaN(Number(String(grid[0][3]??'').trim()))) grid = grid.slice(1);
   const t = v => String(v ?? '').trim();
-  return grid.map(r => ({cls:t(r[col.cls]), subj:t(r[col.subj]), teacher:t(r[col.teacher]), hours: col.hours>=0 ? t(r[col.hours]) : '1'}));
+  return grid.map(r => ({cls:t(r[col.cls]), subj:t(r[col.subj]), teacher:col.teacher>=0?t(r[col.teacher]):'', hours: col.hours>=0 ? t(r[col.hours]) : '1', code: col.code>=0 ? t(r[col.code]) : '', tname: col.tname>=0 ? t(r[col.tname]) : ''}));
 }
-function rowsToText(rows){return 'Class\tSubject\tTeacher\tAllotted hrs\n'+rows.map(r=>[r.cls,r.subj,r.teacher,r.hours].join('\t')).join('\n');}
+function rowsToText(rows){
+  const xc = rows.some(r=>r.code), xn = rows.some(r=>r.tname);
+  return 'Class\tSubject\tTeacher\tAllotted hrs' + (xc||xn?'\tCode':'') + (xn?'\tTeacher name':'') + '\n' + rows.map(r=>[r.cls,r.subj,r.teacher,r.hours].concat(xc||xn?[r.code||'']:[]).concat(xn?[r.tname||'']:[]).join('\t')).join('\n');
+}
 
 function updateSummary(){
-  const rows = rowsFromGrid(gridFromText($('data').value)).filter(r=>r.cls&&r.subj&&r.teacher&&+r.hours>0);
+  const rows = rowsFromGrid(gridFromText($('data').value)).filter(r=>r.cls&&r.subj&&+r.hours>0);
   if(!rows.length){ $('summary').innerHTML=''; return; }
-  const cl=new Set(rows.map(r=>r.cls)), te=new Set(rows.flatMap(r=>splitTeachers(r.teacher)));
+  const cl=new Set(rows.map(r=>r.cls)), te=new Set(rows.filter(r=>r.teacher && !COMMON_RE.test(r.teacher)).flatMap(r=>splitTeachers(r.teacher)));
   const hrs=rows.reduce((a,r)=>a+Math.round(+r.hours),0);
   $('summary').innerHTML = `<span class="pill"><b>${cl.size}</b> classes</span><span class="pill"><b>${te.size}</b> teachers</span><span class="pill"><b>${rows.length}</b> subjects</span><span class="pill"><b>${hrs}</b> hours / week</span>`;
 }
@@ -813,7 +880,7 @@ $('sSchool').onclick = () => loadSample('school');
 $('sCollege').onclick = () => loadSample('college');
 
 $('clear').onclick = () => { $('data').value=''; $('inmsg').innerHTML=''; $('summary').innerHTML=''; store.set('data',''); $('dropT').textContent='Upload Excel file'; $('dropS').textContent='Tap to choose, or drag a .xlsx / .xls / .csv file here'; };
-['inst','ttitle'].forEach(id=>{ const v=store.get(id); if(v) $(id).value=v; $(id).addEventListener('input',()=>{store.set(id,$(id).value); if(state) renderView();}); });
+['inst','ttitle','dept'].forEach(id=>{ const v=store.get(id); if(v) $(id).value=v; $(id).addEventListener('input',()=>{store.set(id,$(id).value); if(state) renderView();}); });
 { const d=store.get('data'); if(d) { $('data').value=d; updateSummary(); } }
 
 // ---------- tutorial ----------
@@ -985,6 +1052,11 @@ function grid(name, meta, cellFn){
   }
   return h + '</tbody></table></div></div>';
 }
+const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
+const TPAL = ['FFFF99','CCFFCC','99CCFF','FFCC99','CC99FF','CCFFFF','FF99CC','FFCCCC','CCCCFF','FFE699','99FFCC','FFCC66','CCFF99','66CCFF','FF9999','E2C9A6','B4C7E7','C5E0B4','F8CBAD','D9D2E9'];
+const TPAL_NAMES = ['Light Yellow','Light Green','Pale Blue','Tan','Lavender','Light Turquoise','Rose','Light Pink','Periwinkle','Gold','Mint','Light Orange','Lime','Sky Blue','Coral','Beige','Steel Blue','Sage','Peach','Lilac'];
+const tColor = t => TPAL[t % TPAL.length];
+const gFill = g => g.common ? 'C0C0C0' : g.ts.length ? tColor(g.ts[0]) : 'FFFFFF';
 function moveCell(c, s, okSet){
   const {pb, cg} = state, gi = cg[c][s];
   let cls = '';
@@ -995,16 +1067,32 @@ function moveCell(c, s, okSet){
   return `<td class="cell${cls}" ${da}><div class="slot" style="${slotStyle(g.subj)}"><div class="s">${esc(g.subj)}</div><div class="t">${esc(g.ts.map(t=>pb.teachers[t]).join(' / '))}</div></div></td>`;
 }
 function okTargets(){ if (!pick) return null; const o = new Set(); for (let s=0;s<S;s++) if (s!==pick.s && !state.board.check(pick.c, pick.s, s)) o.add(s); return o; }
+function compactCell(c, s, okSet){
+  const {pb, cg} = state, gi = cg[c][s];
+  let cls = '';
+  if (pick && pick.c===c) cls = s===pick.s ? ' selC' : okSet.has(s) ? ' okT' : ' noT';
+  const da = `data-c="${c}" data-s="${s}" draggable="true"`;
+  if (gi<0) return `<td class="cc free${cls}" ${da}></td>`;
+  const g = pb.groups[gi], tip = `${g.subj}${g.ts.length ? ' — ' + g.ts.map(t=>pb.tname[t]).join(', ') : ''}`;
+  return `<td class="cc${cls}${g.lab?' lab':''}${g.common?' com':''}" ${da} style="background:#${gFill(g)}" title="${esc(tip)}">${esc(cellLabel(pb, g))}</td>`;
+}
+function masterLegend(){
+  const {pb} = state;
+  let h = '<div class="legend"><div class="lg-h">Teachers</div><div class="lg-t">' + pb.teachers.map((t,i)=>`<span style="background:#${tColor(i)}"><b>${esc(pb.tcode[i])}</b>${pb.tname[i]!==pb.tcode[i]?' – '+esc(pb.tname[i]):''} · ${pb.teacherLoad[i]} h</span>`).join('') + '</div>';
+  h += '<div class="lg-h">Subjects and teachers</div><div class="scroll"><table class="key"><thead><tr><th>Batch</th><th>Code</th><th>Subject</th><th>Teacher (hrs)</th></tr></thead><tbody>';
+  subjectKey().forEach(e => { h += `<tr><td>${esc(pb.classes[e.c])}</td><td><b>${esc(e.code)}</b></td><td>${esc(e.subj)}</td><td${e.single!==null?` style="background:#${tColor(e.single)}"`:''}>${esc(e.who)}</td></tr>`; });
+  return h + '</tbody></table></div><p class="help">Bold = lab hour · grey italic = common slot · blank = free period</p></div>';
+}
 function masterTable(){
   const {pb, times, brk} = state, okSet = okTargets();
-  let h = '<div class="scroll"><table class="master"><thead><tr><th style="text-align:left">Day</th><th style="text-align:left">Class</th>';
-  for (let p=0;p<P;p++){ h += `<th>Period ${p+1}${times?`<small>${times[p]}</small>`:''}</th>`; if (brk===p+1) h += '<th class="brk"><span>BREAK</span></th>'; }
+  let h = '<div class="scroll"><table class="master compact"><thead><tr><th style="text-align:left">Day</th><th style="text-align:left">Batch</th>';
+  for (let p=0;p<P;p++){ h += `<th>Hour ${ROMAN[p]||p+1}${times?`<small>${times[p]}</small>`:''}</th>`; if (brk===p+1) h += '<th class="brk"><span>BREAK</span></th>'; }
   h += '</tr></thead>';
   for (let d=0; d<D; d++){
     h += `<tbody class="${d%2?'odd':''}">`;
     pb.classes.forEach((cn, c) => {
       h += '<tr>' + (c===0 ? `<th class="mday" rowspan="${pb.classes.length}">${DAYS[d]}</th>` : '') + `<th class="mcls">${esc(cn)}</th>`;
-      for (let p=0;p<P;p++){ h += moveCell(c, d*P+p, okSet); if (brk===p+1) h += '<td class="brk"></td>'; }
+      for (let p=0;p<P;p++){ h += compactCell(c, d*P+p, okSet); if (brk===p+1) h += '<td class="brk"></td>'; }
       h += '</tr>';
     });
     h += '</tbody>';
@@ -1015,8 +1103,8 @@ function renderView(){
   if(!state) return;
   const {pb, cg, v} = state, sel = +$('pick').value; let h = docTitle();
   if(view === 'master'){
-    h += `<p class="tip">All classes, Monday to Friday, in one table. ✋ Tap a period, then a <span style="color:#067647;font-weight:600">green</span> spot in the same row band to move it (or drag on a computer).</p>`;
-    h += masterTable();
+    h += `<p class="tip">All classes, Monday to Friday, in one table — the same layout as the Excel file. Hover or long-press a cell for the full subject name. ✋ Tap a period, then a <span style="color:#067647;font-weight:600">green</span> spot in the same row band to move it (or drag on a computer).</p>`;
+    h += masterTable() + masterLegend();
   } else if(view === 'class'){
     h += `<p class="tip">✋ <b>To move a period:</b> tap it, then tap where it should go — <span style="color:#067647;font-weight:600">green</span> spots keep every rule. On a computer you can also drag and drop.</p>`;
     const okSet = okTargets();
@@ -1077,8 +1165,8 @@ $('copy').onclick = () => {
   const hdrCells=['Day']; for(let p=0;p<P;p++){ hdrCells.push(`Period ${p+1}${times?` (${times[p]})`:''}`); if(brk===p+1) hdrCells.push('Break'); }
   const hdr = hdrCells.join('\t');
   const block = (name, fn) => { L.push(name, hdr); for(let d=0;d<D;d++){ const r=[DAYS[d]]; for(let p=0;p<P;p++){ r.push(fn(d*P+p)); if(brk===p+1) r.push(''); } L.push(r.join('\t')); } L.push(''); };
-  if(view === 'master'){ const hd=['Day','Class']; for(let p=0;p<P;p++){ hd.push(`Period ${p+1}${times?` (${times[p]})`:''}`); if(brk===p+1) hd.push('Break'); } L.push(hd.join('\t'));
-    for(let d=0;d<D;d++) pb.classes.forEach((cn,c)=>{ const r=[c===0?DAYS[d]:'', cn]; for(let p=0;p<P;p++){ const gi=cg[c][d*P+p]; r.push(gi<0?'Free':`${pb.groups[gi].subj} (${pb.groups[gi].ts.map(t=>pb.teachers[t]).join(' / ')})`); if(brk===p+1) r.push(''); } L.push(r.join('\t')); }); }
+  if(view === 'master'){ const hd=['Day','Batch']; for(let p=0;p<P;p++){ hd.push(`Hour ${ROMAN[p]||p+1}${times?` (${times[p]})`:''}`); if(brk===p+1) hd.push('Break'); } L.push(hd.join('\t'));
+    for(let d=0;d<D;d++) pb.classes.forEach((cn,c)=>{ const r=[c===0?DAYS[d]:'', cn]; for(let p=0;p<P;p++){ const gi=cg[c][d*P+p]; r.push(gi<0?'':cellLabel(pb, pb.groups[gi])); if(brk===p+1) r.push(''); } L.push(r.join('\t')); }); }
   else if(view === 'class') pb.classes.forEach((cn,c)=>{ if(sel>=0&&sel!==c) return; block(cn, s=>{ const gi=cg[c][s]; return gi<0?'Free':`${pb.groups[gi].subj} (${pb.groups[gi].ts.map(t=>pb.teachers[t]).join(' / ')})`; }); });
   else if(view === 'teacher') pb.teachers.forEach((tn,t)=>{ if(sel>=0&&sel!==t) return; block(tn, s=>{ const c=v.tb[t][s]; return c===null?'-':`${pb.classes[c]} - ${pb.groups[cg[c][s]].subj}`; }); });
   else { L.push(['Teacher',...DAYS,'Total'].join('\t')); pb.teachers.forEach((tn,t)=>{ const per=[]; for(let d=0;d<D;d++){let n=0;for(let p=0;p<P;p++) if(v.tb[t][d*P+p]!==null) n++; per.push(n);} L.push([tn,...per,per.reduce((x,y)=>x+y,0)].join('\t')); }); }
@@ -1239,46 +1327,180 @@ function ttBlock(sh, name, meta, cellFn){
 const classCell = c => s => { const gi = state.cg[c][s]; if (gi<0) return ['Free', ST.free]; const g = state.pb.groups[gi]; return [`${g.subj}\n${g.ts.map(t=>state.pb.teachers[t]).join(' / ')}`, slotSt(g.subj)]; };
 const teacherCell = t => s => { const c = state.v.tb[t][s]; if (c===null) return state.unav[t][s] ? ['Not available', {...ST.free, font:{sz:9, color:{rgb:'B42318'}}, fill:{fgColor:{rgb:'FEF3F2'}}}] : ['—', ST.free]; const g = state.pb.groups[state.cg[c][s]]; return [`${state.pb.classes[c]}\n${g.subj}`, slotSt(g.subj)]; };
 
-function buildWorkbook(){
-  const {pb, cg, v} = state, wb = XLSX.utils.book_new(), cols = ttCols(), ncol = cols.length, used = new Set();
-  const sname = n => { let b = String(n).replace(/[\\\/\?\*\[\]:]/g,' ').trim().slice(0,28) || 'Sheet', s=b, i=2; while(used.has(s.toLowerCase())) s = `${b} (${i++})`; used.add(s.toLowerCase()); return s; };
-  // master: all classes, Mon–Fri, one table
-  { const {times, brk} = state, mcols = [12, 20]; for (let p=0;p<P;p++){ mcols.push(22); if (brk===p+1) mcols.push(5); }
-    const m = new XSheet(); docHeader(m, mcols.length);
-    m.add(['MASTER TIMETABLE — ALL CLASSES'], ST.sec, {merge:mcols.length, h:22});
-    const hd = ['Day','Class']; for (let p=0;p<P;p++){ hd.push(`Period ${p+1}` + (times ? `\n${times[p]}` : '')); if (brk===p+1) hd.push(''); }
-    m.add(hd, c => (brk && c===brk+2) ? ST.brk : ST.head, {h: times ? 30 : 20});
-    const bc = brk ? brk+2 : -1, first = m.rows.length;
-    for (let d=0; d<D; d++){
-      const start = m.rows.length;
-      pb.classes.forEach((cn,c) => {
-        const vals = [c===0 ? DAYS[d] : '', cn], sts = [ST.day, {...ST.day, font:{bold:true, sz:10, color:{rgb:'3730A3'}}}];
-        for (let p=0;p<P;p++){ const [v2, s2] = classCell(c)(d*P+p); vals.push(v2); sts.push(s2); if (brk===p+1){ vals.push(''); sts.push(ST.brk); } }
-        m.add(vals, k => sts[k], {h:34});
-      });
-      if (pb.classes.length > 1) m.merges.push({s:{r:start, c:0}, e:{r:start+pb.classes.length-1, c:0}});
+// ===== Excel in the college format: Colour · Black & White · Teacher-wise · Hours Check =====
+const BL = {style:'thin', color:{rgb:'808080'}}, BOX = {top:BL, bottom:BL, left:BL, right:BL};
+const XF = 'Arial';
+const XS = {
+  t1: {font:{name:XF, bold:true, sz:14}, alignment:{horizontal:'center', vertical:'center'}},
+  t2: {font:{name:XF, bold:true, sz:12}, alignment:{horizontal:'center', vertical:'center'}},
+  head: {font:{name:XF, bold:true, sz:10, color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:'000080'}}, alignment:{horizontal:'center', vertical:'center', wrapText:true}, border:BOX},
+  headBW: {font:{name:XF, bold:true, sz:10}, alignment:{horizontal:'center', vertical:'center', wrapText:true}, border:BOX},
+  side: {font:{name:XF, bold:true, sz:10}, fill:{fgColor:{rgb:'DDDDDD'}}, alignment:{horizontal:'center', vertical:'center'}, border:BOX},
+  sideBW: {font:{name:XF, bold:true, sz:10}, alignment:{horizontal:'center', vertical:'center'}, border:BOX},
+  empty: {font:{name:XF, sz:10}, alignment:{horizontal:'center', vertical:'center'}, border:BOX},
+  brk: {font:{name:XF, bold:true, sz:8, color:{rgb:'808080'}}, alignment:{horizontal:'center', vertical:'center', textRotation:90}, border:BOX},
+  note: {font:{name:XF, sz:9, italic:true}},
+  sec: {font:{name:XF, bold:true, sz:11}},
+  small: {font:{name:XF, sz:9}, alignment:{vertical:'top', wrapText:true}, border:BOX},
+  smallB: {font:{name:XF, sz:9, bold:true}, alignment:{vertical:'top', wrapText:true}, border:BOX},
+  txt: {font:{name:XF, sz:10}, alignment:{vertical:'center', wrapText:true}, border:BOX},
+  num: {font:{name:XF, sz:10}, alignment:{horizontal:'center', vertical:'center'}, border:BOX},
+  foot: {font:{name:XF, italic:true, sz:8, color:{rgb:'667085'}}},
+};
+const slotX = (g, colour) => ({font:{name:XF, sz:10, bold:!!g.lab, italic:!!g.common}, alignment:{horizontal:'center', vertical:'center', wrapText:true}, border:BOX,
+  ...(colour ? {fill:{fgColor:{rgb: gFill(g)}}} : {})});
+XSheet.prototype.setF = function(r, c, f, v, style){ (this.fx = this.fx || []).push([r, c, f, v, style]); };
+const _build = XSheet.prototype.build;
+XSheet.prototype.build = function(widths){
+  const ws = _build.call(this, widths);
+  (this.fx || []).forEach(([r, c, f, v, st]) => { ws[XLSX.utils.encode_cell({r, c})] = {t: typeof v === 'number' ? 'n' : 's', v, f, s: st}; });
+  return ws;
+};
+function hourHeads(withTimes){ const {times, brk} = state, out = []; for (let p=0;p<P;p++){ out.push(`Hour ${ROMAN[p]||p+1}` + (withTimes && times ? `\n${times[p]}` : '')); if (brk===p+1) out.push('BREAK'); } return out; }
+function titleRows(sh, ncol){
+  const dept = $('dept').value.trim(), inst = $('inst').value.trim() || (reg && reg.college) || '', tt = $('ttitle').value.trim() || 'Time Table';
+  if (dept) sh.add([dept], XS.t1, {merge:ncol, h:20});
+  if (inst) sh.add([inst], dept ? XS.t2 : XS.t1, {merge:ncol, h: dept ? 16 : 20});
+  sh.add([tt], XS.t2, {merge:ncol, h:16});
+  sh.add([]);
+}
+function subjectKey(){
+  // one line per class + subject code (theory and lab together), teachers with hours
+  const {pb} = state, map = new Map();
+  pb.groups.forEach(g => {
+    const k = g.c + '|' + g.code;
+    if (!map.has(k)) map.set(k, {c:g.c, code:g.code, subj: g.subj, lab:g.lab, th:new Map(), common:g.common, order: map.size});
+    const e = map.get(k);
+    if (e.lab && !g.lab) { e.subj = g.subj; e.lab = false; }
+    if (g.common) e.th.set('Common slot', (e.th.get('Common slot')||0) + g.count);
+    g.ts.forEach(t => e.th.set(t, (e.th.get(t)||0) + g.count));
+  });
+  return [...map.values()].sort((a,b) => a.c - b.c || a.order - b.order).map(e => ({...e,
+    who: [...e.th.entries()].map(([t,h]) => `${typeof t === 'number' ? pb.tname[t] : t} (${h})`).join(', '),
+    single: e.th.size === 1 && typeof [...e.th.keys()][0] === 'number' ? [...e.th.keys()][0] : null}));
+}
+function mainSheet(colour){
+  const {pb, cg, brk} = state, hh = hourHeads(true), ncol = 2 + hh.length, sh = new XSheet();
+  const widths = [11, 8, ...hh.map(x => x === 'BREAK' ? 4 : 15)];
+  titleRows(sh, Math.max(ncol, 7));
+  sh.add(['Day', 'Batch', ...hh], (c) => (hh[c-2] === 'BREAK') ? XS.brk : (colour ? XS.head : XS.headBW), {h: state.times ? 28 : 18});
+  const first = sh.rows.length, C = pb.classes.length;
+  for (let d=0; d<D; d++){
+    const start = sh.rows.length;
+    pb.classes.forEach((cn, c) => {
+      const vals = [c===0 ? DAYS[d] : '', cn], sts = [colour ? XS.side : XS.sideBW, colour ? XS.side : XS.sideBW];
+      for (let p=0;p<P;p++){
+        const gi = cg[c][d*P+p];
+        if (gi < 0) { vals.push(''); sts.push(XS.empty); } else { const g = pb.groups[gi]; vals.push(cellLabel(pb, g)); sts.push(slotX(g, colour)); }
+        if (brk===p+1){ vals.push(''); sts.push(XS.brk); }
+      }
+      sh.add(vals, k => sts[k], {h:16.5});
+    });
+    if (C > 1) sh.merges.push({s:{r:start, c:0}, e:{r:start+C-1, c:0}});
+  }
+  if (brk){ const bc = 2 + brk; sh.merges.push({s:{r:first, c:bc}, e:{r:sh.rows.length-1, c:bc}}); sh.rows[first][bc] = 'BREAK'; }
+  const W = Math.max(ncol, 7);
+  sh.add([]);
+  sh.add([`Bold = Lab hour     ${colour ? 'Italic / grey' : 'Italic'} = Common slot (no teacher)     Blank = free period`], XS.note, {merge:W});
+  sh.add([]);
+  // teachers legend: 2-column cells
+  sh.add(['TEACHERS'], XS.sec, {merge:W});
+  const per = Math.ceil(W / 2);
+  for (let i=0; i<pb.teachers.length; i+=per){
+    const r = sh.rows.length, vals = [], sts = [];
+    for (let k=0; k<per && i+k<pb.teachers.length; k++){
+      const t = i+k, code = pb.tcode[t], name = pb.tname[t];
+      vals[k*2] = (name && name !== code ? `${code} – ${name}` : code) + (colour ? `  (${TPAL_NAMES[t % TPAL.length]})` : '');
+      sts[k*2] = {font:{name:XF, bold:true, sz:9}, alignment:{vertical:'center', wrapText:true}, ...(colour ? {fill:{fgColor:{rgb:tColor(t)}}} : {}), border:BOX};
+      sts[k*2+1] = sts[k*2];
+      if (k*2+1 < W) sh.merges.push({s:{r, c:k*2}, e:{r, c:Math.min(k*2+1, W-1)}});
     }
-    if (bc >= 0) { m.merges.push({s:{r:first, c:bc}, e:{r:m.rows.length-1, c:bc}}); m.rows[first][bc] = 'BREAK'; }
-    docFooter(m, mcols.length); XLSX.utils.book_append_sheet(wb, m.build(mcols), sname('Master Timetable')); }
-  let sh = new XSheet(); docHeader(sh, ncol);
-  pb.classes.forEach((cn,c)=> ttBlock(sh, cn, `${cg[c].filter(x=>x>=0).length} hrs/week`, classCell(c)));
-  docFooter(sh, ncol); XLSX.utils.book_append_sheet(wb, sh.build(cols), sname('All Classes'));
-  sh = new XSheet(); docHeader(sh, ncol);
-  pb.teachers.forEach((tn,t)=> ttBlock(sh, tn, `${pb.teacherLoad[t]} hrs/week`, teacherCell(t)));
-  docFooter(sh, ncol); XLSX.utils.book_append_sheet(wb, sh.build(cols), sname('All Teachers'));
-  // workload
-  const wc = [24, ...DAYS.map(()=>8), 9, 10, 11, 16]; sh = new XSheet(); docHeader(sh, wc.length);
-  sh.add(['Teacher', ...DAYS.map(d=>d.slice(0,3)), 'Total', 'Morning', 'Afternoon', 'Longest continuous'], ST.head, {h:20});
-  pb.teachers.forEach((tn,t)=>{ let tot=0, longest=0, mo=0; const per=[];
-    for (let d=0; d<D; d++){ let n=0, run=0; for (let p=0;p<P;p++){ if (v.tb[t][d*P+p]!==null){ n++; run++; longest=Math.max(longest,run); if (state.morning[p]) mo++; } else run=0; } per.push(n); tot+=n; }
-    sh.add([tn, ...per, tot, mo, tot-mo, `${longest} hr`], c => c===0 ? ST.day : c===per.length+1 ? ST.numB : ST.num, {h:18}); });
-  docFooter(sh, wc.length); XLSX.utils.book_append_sheet(wb, sh.build(wc), sname('Workload'));
-  // one sheet per class
-  pb.classes.forEach((cn,c)=>{ const s = new XSheet(); docHeader(s, ncol); ttBlock(s, cn, `${cg[c].filter(x=>x>=0).length} hrs/week`, classCell(c)); docFooter(s, ncol); XLSX.utils.book_append_sheet(wb, s.build(cols), sname(cn)); });
-  wb.Props = {Title: 'Timetable', Author: reg ? reg.name : APP, Company: reg ? reg.college : ''};
+    const tl = Math.max(1, ...vals.filter(Boolean).map(x => Math.ceil(String(x).length / 30)));
+    sh.add(vals, k => sts[k], {h: Math.max(16, tl * 11.5 + 3)});
+  }
+  sh.add([]);
+  // subjects and teachers key
+  sh.add(['SUBJECTS AND TEACHERS'], XS.sec, {merge:W});
+  const key = subjectKey(), half = Math.ceil(key.length / 2), two = W >= 7;
+  const kh = colour ? {...XS.head, font:{...XS.head.font, sz:9}} : {...XS.headBW, font:{...XS.headBW.font, sz:9}};
+  sh.add(two ? ['Batch','Code','Subject','Teacher (hrs)','Batch / Code','Subject','Teacher (hrs)'] : ['Batch','Code','Subject','Teacher (hrs)'], kh, {h:16});
+  const fillFor = e => (colour && e.single !== null) ? {...XS.small, fill:{fgColor:{rgb:tColor(e.single)}}} : XS.small;
+  for (let i=0; i<(two ? half : key.length); i++){
+    const a = key[i], b = two ? key[i+half] : null, vals = [pb.classes[a.c], a.code, a.subj, a.who], sts = [XS.small, XS.small, XS.small, fillFor(a)];
+    if (two){ if (b){ vals.push(`${pb.classes[b.c]} – ${b.code}`, b.subj, b.who); sts.push(XS.small, XS.small, fillFor(b)); } else { vals.push('', '', ''); sts.push(XS.small, XS.small, XS.small); } }
+    const wd = two ? [10, 10, 21, 15, 15, 15, 15] : [10, 10, 21, 15];
+    const lines = Math.max(1, ...vals.map((x, k) => Math.ceil(String(x||'').length / Math.max(6, (wd[k]||15) * 1.15))));
+    sh.add(vals, k => sts[k], {h: Math.max(14, lines * 11.5 + 3)});
+  }
+  sh.add([]);
+  const total = pb.groups.reduce((a,g)=>a+g.count,0);
+  sh.add([`Total: ${total} hours a week.`], {font:{name:XF, sz:8}}, {merge:W});
+  sh.add([`Generated with ${APP} · ${CREDIT}`], XS.foot, {merge:W});
+  const wds = two ? [Math.max(widths[0],10), Math.max(widths[1],10), Math.max(widths[2]||0,21), ...widths.slice(3)] : widths;
+  while (wds.length < W) wds.push(15);
+  return {ws: sh.build(wds), first, cols: hh.length};
+}
+function teacherSheet(){
+  const {pb, cg, v, brk} = state, hh = hourHeads(true), ncol = 1 + hh.length, sh = new XSheet();
+  const tt = $('ttitle').value.trim() || 'Time Table';
+  sh.add([`Teacher-wise ${tt}`], XS.t2, {merge:ncol, h:18});
+  sh.add([]);
+  pb.teachers.forEach((tn, t) => {
+    const name = pb.tname[t] !== pb.tcode[t] ? `${pb.tname[t]} (${pb.tcode[t]})` : pb.tcode[t];
+    sh.add([`${name}   ·   ${pb.teacherLoad[t]} hrs / week`], {font:{name:XF, bold:true, sz:11}, fill:{fgColor:{rgb:tColor(t)}}, alignment:{vertical:'center'}, border:BOX}, {merge:ncol, h:18});
+    sh.add(['Day', ...hh], c => (hh[c-1] === 'BREAK') ? XS.brk : XS.head, {h: state.times ? 28 : 16});
+    for (let d=0; d<D; d++){
+      const vals = [DAYS[d]], sts = [{...XS.sideBW, fill:undefined}];
+      for (let p=0;p<P;p++){
+        const s = d*P+p, c = v.tb[t][s];
+        if (c === null){ const na = state.unav[t][s]; vals.push(na ? 'Not available' : ''); sts.push(na ? {...XS.empty, font:{name:XF, sz:8, italic:true, color:{rgb:'808080'}}} : XS.empty); }
+        else { const g = pb.groups[cg[c][s]]; vals.push(`${pb.classes[c]} – ${g.code}${g.lab ? ' (LAB)' : ''}`); sts.push(slotX(g, true)); }
+        if (brk===p+1){ vals.push(''); sts.push(XS.brk); }
+      }
+      sh.add(vals, k => sts[k], {h:16.5});
+    }
+    sh.add([]);
+  });
+  sh.add([`Generated with ${APP} · ${CREDIT}`], XS.foot, {merge:ncol});
+  return sh.build([13, ...hh.map(x => x === 'BREAK' ? 4 : 18)]);
+}
+function hoursSheet(main){
+  const {pb, cg} = state, sh = new XSheet(), C = pb.classes.length;
+  const lastCol = XLSX.utils.encode_col(1 + main.cols);
+  sh.add(['Hours check – counts each allotment in the Colour timetable'], {font:{name:XF, bold:true, sz:12}}, {merge:7, h:18});
+  sh.add([]);
+  sh.add(['Batch','Entry in timetable','Subject','Teacher','Allotted hrs','Hours in timetable','Status'], {...XS.head, font:{...XS.head.font, sz:11}}, {h:18});
+  const rowsOf = c => Array.from({length:D}, (_, d) => main.first + d*C + c + 1);   // 1-based Excel rows
+  pb.groups.forEach((g, gi) => {
+    const r = sh.rows.length, label = cellLabel(pb, g), lit = label.replace(/"/g, '""');
+    const placed = cg[g.c].filter(x => x === gi).length;
+    sh.add([pb.classes[g.c], label, g.subj, g.common ? 'Common slot' : g.ts.map(t => pb.tname[t]).join(', '), g.count, '', ''], k => k===4 ? XS.num : XS.txt);
+    const f = rowsOf(g.c).map(x => `COUNTIF(Colour!$C$${x}:$${lastCol}$${x},"${lit}")`).join('+');
+    sh.setF(r, 5, f, placed, XS.num);
+    sh.setF(r, 6, `IF(F${r+1}=E${r+1},"OK","CHECK")`, placed === g.count ? 'OK' : 'CHECK', {...XS.num, font:{name:XF, sz:10, bold:true, color:{rgb: placed === g.count ? '067647' : 'B42318'}}});
+  });
+  sh.add([]);
+  sh.add(['Code','Teacher','Allotted hrs','Hours in timetable','Status'], {...XS.head, font:{...XS.head.font, sz:11}}, {h:18});
+  const rng = `Colour!$C$${main.first+1}:$${lastCol}$${main.first + D*C}`;
+  pb.teachers.forEach((tn, t) => {
+    const r = sh.rows.length, code = pb.tcode[t].replace(/"/g,'""'), placed = state.v.tb[t].filter(x => x !== null).length;
+    sh.add([pb.tcode[t], pb.tname[t], pb.teacherLoad[t], '', ''], k => k===2 ? XS.num : XS.txt);
+    sh.setF(r, 3, `COUNTIF(${rng},"${code} *")+COUNTIF(${rng},"${code}/*")+COUNTIF(${rng},"*/${code} *")+COUNTIF(${rng},"*/${code}/*")`, placed, XS.num);
+    sh.setF(r, 4, `IF(D${r+1}=C${r+1},"OK","CHECK")`, placed === pb.teacherLoad[t] ? 'OK' : 'CHECK', {...XS.num, font:{name:XF, sz:10, bold:true, color:{rgb: placed === pb.teacherLoad[t] ? '067647' : 'B42318'}}});
+  });
+  return sh.build([8, 18, 46, 22, 12, 18, 10]);
+}
+function buildWorkbook(){
+  const wb = XLSX.utils.book_new();
+  const m = mainSheet(true);
+  XLSX.utils.book_append_sheet(wb, m.ws, 'Colour');
+  XLSX.utils.book_append_sheet(wb, mainSheet(false).ws, 'Black & White');
+  XLSX.utils.book_append_sheet(wb, teacherSheet(), 'Teacher-wise');
+  XLSX.utils.book_append_sheet(wb, hoursSheet(m), 'Hours Check');
+  wb.Props = {Title: $('ttitle').value.trim() || 'Time Table', Author: reg ? reg.name : APP, Company: reg ? reg.college : ''};
   return wb;
 }
-// ---------- print setup: A4 landscape, fit to 1 page wide ----------
+
 function fitToPage(arr){
   try {
     const cfb = XLSX.CFB.read(new Uint8Array(arr), {type:'array'});
@@ -1289,7 +1511,7 @@ function fitToPage(arr){
       if (x.indexOf('<pageSetup') >= 0) return;
       x = x.replace(/(<worksheet[^>]*>)/, '$1<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>');
       x = x.replace(/<pageMargins[^>]*\/>/, '');
-      const ps = '<printOptions horizontalCentered="1"/><pageMargins left="0.3" right="0.3" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>';
+      const ps = '<printOptions horizontalCentered="1"/><pageMargins left="0.3" right="0.3" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="0"/>';
       x = x.indexOf('<ignoredErrors') >= 0 ? x.replace('<ignoredErrors', ps + '<ignoredErrors') : x.replace('</worksheet>', ps + '</worksheet>');
       e.content = enc.encode(x); e.size = e.content.length;
     });
